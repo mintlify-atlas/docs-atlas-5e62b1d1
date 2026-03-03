@@ -133,7 +133,7 @@ handleKeydown = (e) => {
 ```javascript
 // background.js:21-23
 function isTabUrlSupported(url) {
-    return !!url && /^(https?:)\//i.test(url);
+    return !!url && /^(https?:)\/\//i.test(url);
 }
 ```
 
