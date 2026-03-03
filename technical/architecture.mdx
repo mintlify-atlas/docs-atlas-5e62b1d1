@@ -1,0 +1,209 @@
+---
+title: Extension architecture
+description: Technical overview of the Click-n-Color extension architecture using Manifest V3
+---
+
+Click-n-Color is built using Chrome Extension Manifest V3, featuring a modern architecture with a service worker, content script injection, and popup interface.
+
+## Manifest V3 structure
+
+The extension uses Manifest V3, the latest Chrome extension platform:
+
+```json manifest.json
+{
+  "manifest_version": 3,
+  "name": "Color-Picker",
+  "version": "1.1.0",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
+```
+
+<Info>
+Manifest V3 replaces background pages with service workers, improving performance and resource usage.
+</Info>
+
+## Core components
+
+### Service worker (background.js)
+
+The service worker handles:
+
+- **Extension lifecycle**: Initializes storage on installation
+- **Tab screenshot capture**: Captures visible tab content for color picking
+- **Content script injection**: Dynamically injects `content.js` into active tabs
+- **Message routing**: Coordinates communication between popup and content script
+
+```javascript background.js:1-19
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.storage.local.get(['savedColors', 'lastPickedColor'], (result) => {
+        const initialState = {};
+
+        if (!Array.isArray(result.savedColors)) {
+            initialState.savedColors = [];
+        }
+
+        if (typeof result.lastPickedColor === 'undefined') {
+            initialState.lastPickedColor = null;
+        }
+
+        if (Object.keys(initialState).length > 0) {
+            chrome.storage.local.set(initialState, () => {
+                console.log("The Color Picker extension initialized");
+            });
+        }
+    });
+});
+```
+
+<Note>
+The service worker validates storage data on installation to ensure proper initialization.
+</Note>
+
+### Content script (content.js)
+
+Dynamically injected when color picking starts:
+
+- **UI overlay**: Creates a full-screen crosshair overlay
+- **Magnifier**: Shows real-time color preview under cursor
+- **Canvas processing**: Renders screenshot to extract pixel colors
+- **Color extraction**: Uses `getImageData()` to read pixel RGB values
+
+```javascript content.js:59-68
+function getColorAt(clientX, clientY) {
+    const canvasX = Math.floor(clientX * devicePixelRatio);
+    const canvasY = Math.floor(clientY * devicePixelRatio);
+
+    const clampedX = Math.max(0, Math.min(canvasX, canvas.width - 1));
+    const clampedY = Math.max(0, Math.min(canvasY, canvas.height - 1));
+
+    const pixel = ctx.getImageData(clampedX, clampedY, 1, 1).data;
+    return `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+}
+```
+
+<Warning>
+The content script accounts for device pixel ratio to ensure accurate color picking on high-DPI displays.
+</Warning>
+
+### Popup (popup.js)
+
+The extension's main user interface:
+
+- **Color display**: Shows selected color with format conversion (RGB/HEX/HSL)
+- **Palette management**: Displays and manages saved colors
+- **Settings**: Handles user preferences (default format, auto-copy, max palette size)
+- **Export functionality**: Exports palettes as JSON, CSS, or PNG image
+- **Theme system**: Applies custom color themes
+
+```javascript popup.js:22-26
+let settings = {
+    defaultFormat: 'rgb',
+    maxPaletteSize: 50,
+    autoCopy: true
+};
+```
+
+## Communication flow
+
+### Color picking workflow
+
+1. User clicks "Pick a Color" button in popup
+2. Popup sends `startColorPick` message to service worker
+3. Service worker:
+   - Validates tab URL supports color picking
+   - Captures visible tab screenshot via `chrome.tabs.captureVisibleTab()`
+   - Injects `content.js` using `chrome.scripting.executeScript()`
+   - Sends screenshot data to content script
+4. Content script displays overlay and magnifier
+5. User clicks to select color
+6. Content script sends `colorPicked` message to service worker
+7. Service worker saves color to storage and reopens popup
+8. Popup displays selected color
+
+```javascript background.js:66-96
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'startColorPick') {
+        (async () => {
+            try {
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (!tab || !tab.id) {
+                    sendResponse({ status: 'error', message: 'No active tab found.' });
+                    return;
+                }
+
+                if (!isTabUrlSupported(tab.url)) {
+                    sendResponse({ status: 'error', message: 'This page is not supported for color picking.' });
+                    return;
+                }
+
+                const imageUri = await captureVisibleTab(tab.windowId);
+                await chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    files: ['content.js']
+                });
+
+                await sendScreenshotWithRetry(tab.id, imageUri, 6);
+                sendResponse({ status: 'started' });
+            } catch (error) {
+                console.error('startColorPick failed:', error);
+                sendResponse({ status: 'error', message: 'Unable to start picker on this page.' });
+            }
+        })();
+
+        return true;
+    }
+    // ...
+});
+```
+
+<Info>
+The service worker uses retry logic (up to 6 attempts) when sending screenshots to ensure the content script is ready.
+</Info>
+
+## Supported page URLs
+
+Color picking only works on web pages with HTTP/HTTPS protocols:
+
+```javascript background.js:21-23
+function isTabUrlSupported(url) {
+    return !!url && /^(https?:)\/\//i.test(url);
+}
+```
+
+<Warning>
+Chrome restricts extensions on `chrome://`, `edge://`, and extension pages for security.
+</Warning>
+
+## Storage synchronization
+
+The popup listens for storage changes to update the UI in real-time:
+
+```javascript popup.js:140-153
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local') {
+        return;
+    }
+
+    if (changes.lastPickedColor && isUsableColor(changes.lastPickedColor.newValue)) {
+        setSelectedColor(changes.lastPickedColor.newValue);
+    }
+
+    if (changes.savedColors) {
+        const updatedColors = Array.isArray(changes.savedColors.newValue) ? changes.savedColors.newValue : [];
+        renderSavedColors(updatedColors);
+    }
+});
+```
+
+This enables the popup to automatically reflect newly picked colors without manual refresh.

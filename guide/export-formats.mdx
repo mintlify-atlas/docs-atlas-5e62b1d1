@@ -1,0 +1,258 @@
+---
+title: Export format options
+description: Export your color palettes as JSON, CSS variables, or PNG images
+---
+
+Click-n-Color provides three different export formats to integrate your color palettes into various workflows and design tools.
+
+## Opening the export modal
+
+To export your palette:
+
+<Steps>
+  <Step title="Click Export Palette">
+    Click the **Export Palette** button in the footer of the extension popup.
+    
+    ```javascript
+    // From popup.js:252
+    exportBtn.addEventListener('click', () => {
+        exportPaletteModal.style.display = 'flex';
+    });
+    ```
+  </Step>
+  
+  <Step title="Choose a format">
+    Select one of the three export format options:
+    - Export as JSON
+    - Export as CSS Variables
+    - Export as Image
+  </Step>
+  
+  <Step title="Download">
+    The file will download automatically to your browser's default download location.
+  </Step>
+</Steps>
+
+## Export as JSON
+
+Exports your palette as a JSON array of color values.
+
+### File details
+
+- **Filename**: `color-palette.json`
+- **Format**: Pretty-printed JSON with 2-space indentation
+- **Content**: Array of RGB color strings
+
+### Example output
+
+```json
+[
+  "rgb(138, 43, 226)",
+  "rgb(0, 191, 255)",
+  "rgb(255, 20, 20)",
+  "rgb(18, 18, 18)"
+]
+```
+
+### Implementation
+
+```javascript
+// From popup.js:375
+function exportAsJson() {
+    chrome.storage.local.get(['savedColors'], (result) => {
+        const savedColors = result.savedColors || [];
+        const dataStr = JSON.stringify(savedColors, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', 'color-palette.json');
+        linkElement.click();
+    });
+}
+```
+
+<Tip>
+  JSON export is ideal for importing colors into JavaScript applications or design tools that support JSON color palettes.
+</Tip>
+
+## Export as CSS variables
+
+Exports your palette as CSS custom properties (variables) ready to use in stylesheets.
+
+### File details
+
+- **Filename**: `color-variables.css`
+- **Format**: CSS with `:root` selector
+- **Content**: HEX color values as CSS variables
+- **Naming**: Sequential naming as `--color-1`, `--color-2`, etc.
+
+### Example output
+
+```css
+:root {
+  --color-1: #8a2be2;
+  --color-2: #00bfff;
+  --color-3: #ff1414;
+  --color-4: #121212;
+}
+```
+
+### Implementation
+
+```javascript
+// From popup.js:392
+function exportAsCss() {
+    chrome.storage.local.get(['savedColors'], (result) => {
+        const savedColors = result.savedColors || [];
+        let cssVars = ':root {\n';
+        savedColors.forEach((color, index) => {
+            // Convert all colors to hex for CSS
+            const hexColor = color.startsWith('#') ? color : rgbToHex(color);
+            cssVars += `  --color-${index + 1}: ${hexColor};\n`;
+        });
+        cssVars += '}';
+        // ... download logic
+    });
+}
+```
+
+<Info>
+  All colors are automatically converted to HEX format for CSS compatibility, even if they were stored as RGB.
+</Info>
+
+### Usage in your CSS
+
+Once exported, you can use the variables in your stylesheets:
+
+```css
+.primary-button {
+  background-color: var(--color-1);
+}
+
+.secondary-text {
+  color: var(--color-2);
+}
+```
+
+## Export as image
+
+Exports your palette as a PNG image with color swatches arranged in a grid.
+
+### File details
+
+- **Filename**: `color-palette.png`
+- **Format**: PNG image
+- **Layout**: Grid with up to 5 columns
+- **Swatch size**: 50×50 pixels per color
+- **Background**: Dark (#121212)
+- **Padding**: 10 pixels
+
+### Image specifications
+
+The canvas dimensions are calculated based on your palette size:
+
+```javascript
+// From popup.js:424
+const colorSize = 50;  // Size of each color square
+const padding = 10;
+const cols = Math.min(5, savedColors.length);
+const rows = Math.ceil(savedColors.length / cols);
+canvas.width = cols * colorSize + padding * 2;
+canvas.height = rows * colorSize + padding * 2;
+```
+
+### Implementation
+
+```javascript
+// From popup.js:413
+function exportAsImage() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Fill background
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw color squares
+    savedColors.forEach((color, index) => {
+        const row = Math.floor(index / cols);
+        const col = index % cols;
+        ctx.fillStyle = color;
+        ctx.fillRect(
+            padding + col * colorSize,
+            padding + row * colorSize,
+            colorSize - 2,
+            colorSize - 2
+        );
+    });
+    
+    // Export as PNG
+    canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = 'color-palette.png';
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+    }, 'image/png');
+}
+```
+
+<Note>
+  If your palette is empty, you'll see a notification "No colors to export!" and the export will be canceled.
+</Note>
+
+<Tip>
+  Image export is perfect for sharing palettes visually, including them in design presentations, or using them as reference in design tools like Figma or Adobe XD.
+</Tip>
+
+## Export examples
+
+<Tabs>
+  <Tab title="Small palette (4 colors)">
+    - **JSON**: 4-line array
+    - **CSS**: 6 lines total (`:root` wrapper + 4 variables)
+    - **PNG**: 220×70 pixels (4 columns × 1 row)
+  </Tab>
+  
+  <Tab title="Medium palette (15 colors)">
+    - **JSON**: 15-line array
+    - **CSS**: 17 lines total
+    - **PNG**: 270×170 pixels (5 columns × 3 rows)
+  </Tab>
+  
+  <Tab title="Large palette (50 colors)">
+    - **JSON**: 50-line array
+    - **CSS**: 52 lines total
+    - **PNG**: 270×520 pixels (5 columns × 10 rows)
+  </Tab>
+</Tabs>
+
+## Notifications
+
+After each export, you'll see a confirmation notification:
+
+- **JSON**: "Palette exported as JSON!"
+- **CSS**: "Palette exported as CSS variables!"
+- **PNG**: "Palette exported as image!"
+
+Notifications appear at the top of the popup for 2 seconds (popup.js:246-248).
+
+## Closing the export modal
+
+You can close the export modal by:
+
+- Clicking the × button in the modal header
+- Clicking outside the modal
+- Pressing the **Escape** key
+- Completing an export (modal closes automatically)
+
+```javascript
+// From popup.js:284
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        exportPaletteModal.style.display = 'none';
+    }
+});
+```

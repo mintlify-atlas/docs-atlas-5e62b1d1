@@ -1,0 +1,418 @@
+---
+title: Contributing
+description: How to contribute to the Click-n-Color Chrome Extension project
+---
+
+## Welcome contributors
+
+Click-n-Color is an open-source project, and contributions are welcome! Whether you're fixing bugs, adding features, improving documentation, or suggesting ideas, your help makes the extension better for everyone.
+
+<Info>
+Click-n-Color is licensed under the [MIT License](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension/blob/main/LICENSE), which means you're free to fork, modify, and use the code in your own projects.
+</Info>
+
+## Ways to contribute
+
+### Report bugs
+
+Found a bug? Help us fix it!
+
+1. **Search existing issues** - Check if someone else has reported it
+2. **Create a detailed bug report** including:
+   - Extension version (check in `manifest.json` or `chrome://extensions/`)
+   - Chrome/browser version
+   - Operating system
+   - Steps to reproduce the issue
+   - Expected behavior vs actual behavior
+   - Console errors (open DevTools with F12)
+   - Screenshots or screen recordings if applicable
+
+### Suggest features
+
+Have an idea to improve Click-n-Color?
+
+1. **Check existing feature requests** - Someone might have suggested it already
+2. **Open a new issue** with:
+   - Clear description of the feature
+   - Use case and benefits
+   - Potential implementation approach (if you have ideas)
+   - Examples from other tools (if relevant)
+
+### Improve documentation
+
+Good documentation helps everyone. You can:
+
+- Fix typos or clarify confusing sections
+- Add examples and use cases
+- Create tutorials or guides
+- Translate documentation (if multi-language support is added)
+- Improve code comments
+
+### Write code
+
+Ready to contribute code? Great! See the [development setup](#development-setup) section below.
+
+## Development setup
+
+### Prerequisites
+
+Before you begin, ensure you have:
+
+- **Google Chrome** or a Chromium-based browser
+- **Git** for version control
+- **Code editor** (VS Code, Sublime Text, etc.)
+- Basic knowledge of:
+  - JavaScript (ES6+)
+  - Chrome Extension APIs
+  - HTML/CSS
+
+### Project structure
+
+```
+click-n-color/
+├── manifest.json       # Extension configuration (Manifest V3)
+├── background.js       # Service worker, handles extension lifecycle
+├── content.js          # Injected script for color picking
+├── popup.html          # Extension popup UI structure
+├── popup.css           # Styles with theme support
+├── popup.js            # Main logic, event handling, storage
+├── icon.png            # Extension icon
+├── CHANGELOG.md        # Version history
+└── README.md           # Project documentation
+```
+
+### Clone the repository
+
+```bash
+git clone https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension.git
+cd Click-n-Color-Chrome-Extension
+```
+
+### Load the extension in Chrome
+
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable **Developer mode** (toggle in top-right corner)
+3. Click **Load unpacked**
+4. Select the project directory
+5. The extension is now loaded and ready for testing
+
+<Note>
+After making changes to the code, click the **Reload** button on the extension card in `chrome://extensions/` to see your updates.
+</Note>
+
+### Development workflow
+
+1. **Create a branch** for your feature or bugfix:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes** following the [code guidelines](#code-guidelines)
+
+3. **Test thoroughly**:
+   - Test on multiple websites
+   - Verify all color formats (RGB, HEX, HSL)
+   - Check export functionality
+   - Test theme switching
+   - Verify settings persistence
+   - Check error handling
+
+4. **Check the console** - Ensure no errors in:
+   - Browser console (F12)
+   - Extension background service worker
+   - Extension popup
+
+5. **Update documentation** if needed:
+   - Update `README.md` for user-facing changes
+   - Update `CHANGELOG.md` following existing format
+   - Add code comments for complex logic
+
+## Code guidelines
+
+### JavaScript style
+
+Follow the existing code style in the project:
+
+- Use **camelCase** for variables and functions
+- Use **descriptive names** - `savedColorsList` not `list`
+- Use **const** by default, **let** when reassignment is needed
+- Add **comments** for complex logic
+- Use **template literals** for string concatenation
+- Prefer **arrow functions** for callbacks
+
+### Example code structure
+
+```javascript
+// Good: Descriptive function name and error handling
+function exportAsJson() {
+    chrome.storage.local.get(['savedColors'], (result) => {
+        const savedColors = result.savedColors || [];
+        const dataStr = JSON.stringify(savedColors, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+        const exportFileName = 'color-palette.json';
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileName);
+        linkElement.click();
+
+        exportPaletteModal.style.display = 'none';
+        showNotification('Palette exported as JSON!');
+    });
+}
+```
+
+### Error handling
+
+Always handle errors gracefully:
+
+```javascript
+// Good: Proper error handling with user feedback
+async function copyTextToClipboard(text, successMessage = 'Color copied to clipboard!') {
+    try {
+        await navigator.clipboard.writeText(text);
+        showNotification(successMessage);
+        return true;
+    } catch (error) {
+        console.error('Clipboard write failed:', error);
+        showNotification('Clipboard copy failed. Check permissions.');
+        return false;
+    }
+}
+```
+
+### Input validation
+
+Validate and sanitize user input:
+
+```javascript
+// Good: Validate and clamp values
+function sanitizeSettings(rawSettings) {
+    const safeSettings = rawSettings && typeof rawSettings === 'object' ? rawSettings : {};
+    const defaultFormat = ALLOWED_FORMATS.includes(safeSettings.defaultFormat)
+        ? safeSettings.defaultFormat
+        : 'rgb';
+
+    const parsedPaletteSize = parseInt(safeSettings.maxPaletteSize, 10);
+    const maxPaletteSize = Number.isFinite(parsedPaletteSize)
+        ? Math.min(100, Math.max(10, parsedPaletteSize))
+        : 50;
+
+    return { defaultFormat, maxPaletteSize, autoCopy };
+}
+```
+
+### Memory management
+
+Clean up resources to prevent memory leaks:
+
+```javascript
+// Good: Remove event listeners and clear timeouts
+function cleanup() {
+    if (initTimeoutId) {
+        clearTimeout(initTimeoutId);
+        initTimeoutId = null;
+    }
+    if (handleMouseMove) {
+        document.removeEventListener('mousemove', handleMouseMove);
+        handleMouseMove = null;
+    }
+    if (overlay && overlay.parentNode) {
+        overlay.remove();
+    }
+    // ... more cleanup
+}
+```
+
+## Testing your changes
+
+### Manual testing checklist
+
+Before submitting a pull request, verify:
+
+- [ ] Color picking works on regular websites (HTTP/HTTPS)
+- [ ] Error shown for unsupported pages (`chrome://`, etc.)
+- [ ] All three color formats display correctly (RGB, HEX, HSL)
+- [ ] Colors save to palette and persist after closing popup
+- [ ] Copy to clipboard works (both auto-copy and manual)
+- [ ] All export formats work (JSON, CSS, PNG)
+- [ ] Settings can be changed and persist
+- [ ] Theme switching works for all three themes
+- [ ] Delete color removes from palette
+- [ ] Clear all requires confirmation and works
+- [ ] No console errors in any part of the extension
+- [ ] Magnifier follows cursor and shows correct color
+- [ ] Extension works after browser restart
+
+### Test on multiple sites
+
+Test the extension on various types of websites:
+
+- Simple static pages
+- Complex web applications
+- Sites with animations
+- Pages with iframes
+- High-DPI displays
+- Dark mode websites
+
+### Browser compatibility
+
+While primarily for Chrome, test on Chromium-based browsers if possible:
+
+- Google Chrome
+- Microsoft Edge
+- Brave
+- Opera
+
+## Submitting your contribution
+
+### Pull request process
+
+1. **Ensure your code follows guidelines** - Review the [code guidelines](#code-guidelines)
+
+2. **Update documentation**:
+   - Add entry to `CHANGELOG.md` under "Unreleased" section
+   - Update `README.md` if adding user-facing features
+   - Update version in `manifest.json` if needed (maintainers will handle releases)
+
+3. **Commit your changes**:
+   ```bash
+   git add .
+   git commit -m "Add: Feature description" # or "Fix: Bug description"
+   ```
+
+4. **Push to your fork**:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+5. **Open a pull request**:
+   - Go to the [repository](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension)
+   - Click "New Pull Request"
+   - Select your branch
+   - Fill out the PR template with:
+     - Description of changes
+     - Related issue number (if applicable)
+     - Testing performed
+     - Screenshots (for UI changes)
+
+### Commit message format
+
+Use clear, descriptive commit messages:
+
+```bash
+# Feature
+Add: Color history navigation with keyboard shortcuts
+
+# Bug fix
+Fix: HEX conversion producing invalid values for certain RGB inputs
+
+# Improvement
+Improve: Clipboard error handling with better user feedback
+
+# Documentation
+Docs: Add troubleshooting section for common picker issues
+```
+
+## Areas needing help
+
+<Info>
+These are areas where contributions would be especially valuable:
+</Info>
+
+### Feature ideas
+
+- **Color history navigation** - Navigate through recently picked colors
+- **Keyboard shortcuts** - Quick access to common functions
+- **Color palette management** - Organize colors into named groups
+- **Cloud sync** - Sync palettes across devices using Chrome sync storage
+- **Color manipulation** - Adjust lightness, saturation, etc.
+- **Accessibility improvements** - Better screen reader support
+- **Export templates** - Additional export formats (SCSS, Tailwind, etc.)
+- **Drag-and-drop reordering** - Manually organize saved colors
+
+### Known issues
+
+Check the [GitHub Issues](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension/issues) for:
+
+- Bug reports awaiting fixes
+- Feature requests marked "help wanted"
+- Performance optimization opportunities
+
+### Documentation improvements
+
+- Video tutorials
+- Interactive examples
+- Translation to other languages
+- API documentation for developers
+
+## Code review process
+
+### What to expect
+
+1. **Initial review** - Maintainer will review within a few days
+2. **Feedback** - May request changes or improvements
+3. **Iteration** - Make requested changes and push updates
+4. **Approval** - Once approved, PR will be merged
+5. **Release** - Changes included in next version
+
+### Review criteria
+
+Pull requests are evaluated on:
+
+- **Code quality** - Clean, readable, maintainable code
+- **Testing** - Thoroughly tested with no regressions
+- **Documentation** - Updated docs and changelog
+- **Scope** - Focused on single feature/fix
+- **Compatibility** - Works with existing features
+- **Performance** - No significant performance degradation
+
+## Getting help
+
+### Questions about contributing?
+
+- **Read existing code** - The codebase is well-commented
+- **Check closed PRs** - See how others contributed
+- **Ask in issues** - Comment on related issues
+- **Contact maintainer** - Reach out to [Nikhil Agarwal](https://github.com/nikhilagarwal03)
+
+### Useful resources
+
+- [Chrome Extension Documentation](https://developer.chrome.com/docs/extensions/)
+- [Manifest V3 Migration Guide](https://developer.chrome.com/docs/extensions/mv3/intro/)
+- [Chrome Storage API](https://developer.chrome.com/docs/extensions/reference/storage/)
+- [Chrome Scripting API](https://developer.chrome.com/docs/extensions/reference/scripting/)
+
+## Recognition
+
+All contributors will be:
+
+- Listed in release notes
+- Credited in the repository
+- Part of the Click-n-Color community
+
+<Note>
+Thank you for contributing to Click-n-Color! Every contribution, no matter how small, helps improve the extension for everyone.
+</Note>
+
+## Code of conduct
+
+When contributing, please:
+
+- **Be respectful** - Treat everyone with respect and kindness
+- **Be constructive** - Provide helpful feedback and suggestions
+- **Be patient** - Maintainers and contributors are often volunteers
+- **Be collaborative** - Work together to improve the project
+- **Be open** - Welcome feedback and different perspectives
+
+By participating in this project, you agree to maintain a welcoming and inclusive environment for all contributors.
+
+## License
+
+By contributing to Click-n-Color, you agree that your contributions will be licensed under the MIT License. This means:
+
+- Your code can be freely used, modified, and distributed
+- You retain copyright of your contributions
+- The project can include your contributions in current and future releases
+
+See the [LICENSE](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension/blob/main/LICENSE) file for full details.

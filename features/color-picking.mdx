@@ -1,0 +1,149 @@
+---
+title: Color picking
+description: Pick colors from any webpage with precision using the eyedropper tool
+---
+
+The color picking feature allows you to extract exact color values from any element on a webpage. This is the core functionality of Click-n-Color.
+
+## How it works
+
+The extension uses Chrome's tab capture API to take a screenshot of the visible viewport, then allows you to select any pixel to extract its color value.
+
+<Steps>
+  <Step title="Activate the color picker">
+    Click the "Pick Color" button in the extension popup. The popup will close and an overlay will appear on the current page.
+    
+    ```javascript
+    // popup.js:163-171
+    pickColorBtn.addEventListener('click', () => {
+        chrome.runtime.sendMessage({ type: 'startColorPick' }, () => {
+            if (chrome.runtime.lastError) {
+                console.error('startColorPick message error:', chrome.runtime.lastError.message);
+            }
+        });
+        window.close();
+    });
+    ```
+  </Step>
+
+  <Step title="Screenshot capture">
+    The background script captures a high-quality screenshot of the visible tab area.
+    
+    ```javascript
+    // background.js:25-39
+    function captureVisibleTab(windowId) {
+        return new Promise((resolve, reject) => {
+            chrome.tabs.captureVisibleTab(windowId, {
+                format: 'png',
+                quality: 100
+            }, (imageUri) => {
+                if (chrome.runtime.lastError || !imageUri) {
+                    reject(new Error(chrome.runtime.lastError?.message || 'Unable to capture visible tab'));
+                    return;
+                }
+                resolve(imageUri);
+            });
+        });
+    }
+    ```
+  </Step>
+
+  <Step title="Interactive overlay">
+    A crosshair cursor appears with a color magnifier that follows your mouse, showing the color under the cursor in real-time.
+    
+    The overlay is injected via `content.js` and includes:
+    - A semi-transparent overlay covering the entire viewport
+    - A magnifier element that displays the current color
+    - Mouse tracking to update the magnifier position and color
+  </Step>
+
+  <Step title="Color selection">
+    Click anywhere on the page to select that color. The extension extracts the RGB values from the pixel coordinates.
+    
+    ```javascript
+    // content.js:59-68
+    function getColorAt(clientX, clientY) {
+        const canvasX = Math.floor(clientX * devicePixelRatio);
+        const canvasY = Math.floor(clientY * devicePixelRatio);
+        
+        const clampedX = Math.max(0, Math.min(canvasX, canvas.width - 1));
+        const clampedY = Math.max(0, Math.min(canvasY, canvas.height - 1));
+        
+        const pixel = ctx.getImageData(clampedX, clampedY, 1, 1).data;
+        return `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+    }
+    ```
+  </Step>
+
+  <Step title="Save and display">
+    The picked color is automatically saved to your palette and the popup reopens showing the selected color.
+  </Step>
+</Steps>
+
+## Technical details
+
+### Device pixel ratio handling
+
+The extension accounts for high-DPI displays by using the device pixel ratio when capturing and reading pixel data:
+
+```javascript
+// content.js:158
+devicePixelRatio = window.devicePixelRatio || 1;
+```
+
+### Coordinate accuracy
+
+The color picker uses fixed positioning for the overlay and magnifier to ensure accurate color selection regardless of page scroll position:
+
+```javascript
+// content.js:7-15
+const overlay = document.createElement('div'); 
+overlay.style.position = 'fixed'; 
+overlay.style.top = '0';
+overlay.style.left = '0';
+overlay.style.width = '100%';
+overlay.style.height = '100%';
+overlay.style.zIndex = '9999';
+overlay.style.cursor = 'crosshair';
+```
+
+<Note>
+  The magnifier follows your cursor with a 15px offset to avoid obscuring the pixel you're selecting.
+</Note>
+
+## Canceling color picking
+
+Press the **Escape** key at any time to cancel the color picking operation and remove the overlay:
+
+```javascript
+// content.js:213-217
+handleKeydown = (e) => {
+    if (e.key === 'Escape') {
+        cleanup();
+    }
+};
+```
+
+## Supported pages
+
+<Info>
+  Color picking only works on regular web pages (HTTP/HTTPS). Chrome extension pages, chrome:// URLs, and other special pages are not supported due to browser security restrictions.
+</Info>
+
+```javascript
+// background.js:21-23
+function isTabUrlSupported(url) {
+    return !!url && /^(https?:)\//i.test(url);
+}
+```
+
+## Auto-copy feature
+
+When enabled in settings, the picked color is automatically copied to your clipboard in the selected format. See [Customization](/features/customization) for more details.
+
+```javascript
+// popup.js:349-353
+if (settings.autoCopy) {
+    copyTextToClipboard(colorValue.textContent);
+}
+```

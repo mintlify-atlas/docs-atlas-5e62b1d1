@@ -1,0 +1,183 @@
+---
+title: Chrome permissions
+description: Explanation of Chrome permissions used by Click-n-Color and why they're required
+---
+
+Click-n-Color requires three Chrome permissions to function. Each permission is essential for core features.
+
+## Required permissions
+
+```json manifest.json
+"permissions": [
+  "activeTab",
+  "storage",
+  "scripting"
+]
+```
+
+### activeTab
+
+**Purpose**: Capture screenshots of the current webpage and access tab information
+
+**Why it's needed**:
+- Captures visible tab content using `chrome.tabs.captureVisibleTab()`
+- Reads pixel color data from the screenshot
+- Queries active tab URL to validate supported pages
+
+**Usage in code**:
+
+```javascript background.js:70-74
+const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+if (!tab || !tab.id) {
+    sendResponse({ status: 'error', message: 'No active tab found.' });
+    return;
+}
+```
+
+```javascript background.js:81
+const imageUri = await captureVisibleTab(tab.windowId);
+```
+
+<Info>
+The `activeTab` permission is privacy-friendly: it only grants access when the user clicks the extension icon, not to all tabs at all times.
+</Info>
+
+### storage
+
+**Purpose**: Persist user data locally including colors, settings, and themes
+
+**Why it's needed**:
+- Saves picked colors to the palette
+- Stores user preferences (default format, auto-copy, max palette size)
+- Remembers the last picked color
+- Saves selected theme
+
+**Usage in code**:
+
+```javascript background.js:2-18
+chrome.storage.local.get(['savedColors', 'lastPickedColor'], (result) => {
+    const initialState = {};
+
+    if (!Array.isArray(result.savedColors)) {
+        initialState.savedColors = [];
+    }
+
+    if (typeof result.lastPickedColor === 'undefined') {
+        initialState.lastPickedColor = null;
+    }
+
+    if (Object.keys(initialState).length > 0) {
+        chrome.storage.local.set(initialState, () => {
+            console.log("The Color Picker extension initialized");
+        });
+    }
+});
+```
+
+<Note>
+All data is stored locally using `chrome.storage.local`. No data is synced to the cloud or shared with external servers.
+</Note>
+
+### scripting
+
+**Purpose**: Inject the color picker UI into web pages dynamically
+
+**Why it's needed**:
+- Injects `content.js` into the active tab when color picking starts
+- Creates the crosshair overlay and magnifier UI
+- Enables pixel-perfect color selection on any webpage
+
+**Usage in code**:
+
+```javascript background.js:82-85
+await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    files: ['content.js']
+});
+```
+
+<Info>
+Scripts are only injected when the user initiates color picking, not automatically on page load.
+</Info>
+
+## Permission security model
+
+### No host permissions required
+
+Click-n-Color does **not** request broad host permissions like `<all_urls>` or `*://*/*`. This means:
+
+- The extension cannot access page content without user action
+- No automatic script injection on page load
+- No background tracking or data collection
+
+<Note>
+The `activeTab` permission provides temporary access only when the user clicks the extension icon, following Chrome's principle of least privilege.
+</Note>
+
+### Data privacy
+
+All data storage is local-only:
+
+- No network requests to external servers
+- No analytics or telemetry
+- No user tracking
+- Colors and settings never leave the user's device
+
+<Info>
+You can verify this by checking the source code - there are no `fetch()` calls or network API usage.
+</Info>
+
+## Permission comparison
+
+| Permission | Scope | When Active | User Control |
+|------------|-------|-------------|---------------|
+| `activeTab` | Current tab only | When extension icon clicked | Full control |
+| `storage` | Local storage | Always (offline) | Data stays local |
+| `scripting` | Active tab only | When color picking starts | User-initiated |
+
+## What the extension cannot do
+
+Because of the limited permission set:
+
+- Cannot access tabs the user hasn't explicitly opened the extension on
+- Cannot run in the background on all websites
+- Cannot access bookmarks, history, or downloads
+- Cannot make network requests
+- Cannot access clipboard without user interaction
+
+<Warning>
+Color picking is restricted on Chrome internal pages (`chrome://`, `edge://`) and extension pages due to Chrome security policies.
+</Warning>
+
+## Page URL validation
+
+The extension validates that pages support color picking:
+
+```javascript background.js:21-23
+function isTabUrlSupported(url) {
+    return !!url && /^(https?:)\/\//i.test(url);
+}
+```
+
+This checks for:
+- HTTP (`http://`) pages
+- HTTPS (`https://`) pages
+
+Blocked pages include:
+- Chrome internal pages (`chrome://`)
+- Edge internal pages (`edge://`)
+- Extension pages (`chrome-extension://`)
+- Local files (`file://`) unless explicitly enabled in Chrome settings
+
+## Minimal permission philosophy
+
+Click-n-Color follows Chrome's recommended security practices:
+
+1. **Request only necessary permissions**: Only three permissions are used
+2. **Use `activeTab` over host permissions**: Temporary access instead of permanent
+3. **User-initiated actions**: Color picking requires explicit user action
+4. **Local-first**: All data stored locally, no external communication
+
+<Info>
+This minimal permission approach protects user privacy while providing full color picking functionality.
+</Info>

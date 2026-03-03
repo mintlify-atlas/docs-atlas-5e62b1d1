@@ -1,0 +1,199 @@
+---
+title: Palette management
+description: Organize, save, and manage your color collections
+---
+
+Click-n-Color automatically saves every color you pick, building a palette that persists across browser sessions. This allows you to build and maintain color collections for your projects.
+
+## How colors are saved
+
+When you pick a color, it's automatically added to your saved palette stored in Chrome's local storage.
+
+```javascript
+// background.js:102-115
+chrome.storage.local.get(['savedColors', 'settings'], (result) => {
+    let savedColors = Array.isArray(result.savedColors) ? result.savedColors : [];
+    const settings = result.settings && typeof result.settings === 'object' ? result.settings : {};
+    const parsedMax = parseInt(settings.maxPaletteSize, 10);
+    const maxPaletteSize = Number.isFinite(parsedMax)
+        ? Math.min(100, Math.max(10, parsedMax))
+        : 50;
+
+    if (!savedColors.includes(message.color)) {
+        savedColors.unshift(message.color);
+        if (savedColors.length > maxPaletteSize) {
+            savedColors = savedColors.slice(0, maxPaletteSize);
+        }
+    }
+});
+```
+
+<Note>
+  Duplicate colors are not added to the palette. If you pick a color that already exists in your saved colors, it won't create a duplicate entry.
+</Note>
+
+## Palette size limit
+
+By default, your palette can store up to **50 colors**. This limit can be customized in settings between 10 and 100 colors.
+
+```javascript
+// popup.js:22-26
+let settings = {
+    defaultFormat: 'rgb',
+    maxPaletteSize: 50,
+    autoCopy: true
+};
+```
+
+When your palette reaches the maximum size, the oldest colors are automatically removed as new colors are added.
+
+<Tip>
+  Increase the palette size in settings if you're working on large projects with many colors.
+</Tip>
+
+## Viewing saved colors
+
+Saved colors are displayed as color swatches in the popup, arranged from newest to oldest:
+
+```javascript
+// popup.js:467-501
+function renderSavedColors(colors) {
+    savedColorsList.innerHTML = '';
+    if (colors.length === 0) {
+        // Show empty state
+        const emptyState = document.createElement('div');
+        emptyState.classList.add('empty-state');
+        emptyState.innerHTML = '<span>No colors saved yet. Pick a color to start.</span>';
+        savedColorsList.appendChild(emptyState);
+        return;
+    }
+    colors.forEach(color => {
+        const colorDiv = document.createElement('div');
+        colorDiv.classList.add('saved-color');
+        colorDiv.style.backgroundColor = color;
+        colorDiv.setAttribute('data-color', color);
+        // ... add delete button and click handlers
+    });
+}
+```
+
+## Interacting with saved colors
+
+### Selecting a color
+
+Click any color swatch in your palette to:
+1. Set it as the currently selected color in the preview
+2. Update the color value display in your chosen format
+3. Automatically copy the color to your clipboard
+
+```javascript
+// popup.js:493-498
+colorDiv.addEventListener('click', () => {
+    // Update the color preview
+    setSelectedColor(color);
+    // Copy to clipboard
+    copyTextToClipboard(colorValue.textContent);
+});
+```
+
+### Deleting colors
+
+Each color swatch has a delete button (×) that appears on hover. Click it to remove that specific color from your palette.
+
+```javascript
+// popup.js:358-366
+function deleteColor(colorToDelete) {
+    chrome.storage.local.get(['savedColors'], (result) => {
+        const savedColors = result.savedColors || [];
+        const updatedColors = savedColors.filter(color => color !== colorToDelete);
+        chrome.storage.local.set({ savedColors: updatedColors }, () => {
+            renderSavedColors(updatedColors);
+        });
+    });
+}
+```
+
+### Clear all colors
+
+The "Clear All" button removes all colors from your palette. To prevent accidental deletion, this requires confirmation:
+
+<Steps>
+  <Step title="First click">
+    Click "Clear All" - the button text changes to "Confirm Clear" and a notification appears.
+  </Step>
+  
+  <Step title="Confirmation window">
+    You have 2.5 seconds to click again to confirm. If you don't click within this time, the operation is cancelled.
+  </Step>
+  
+  <Step title="Second click">
+    Click "Confirm Clear" to permanently delete all colors from your palette.
+  </Step>
+</Steps>
+
+```javascript
+// popup.js:201-236
+clearAllBtn.addEventListener('click', () => {
+    chrome.storage.local.get(['savedColors'], (result) => {
+        const savedColors = result.savedColors || [];
+        if (savedColors.length === 0) {
+            showNotification('Palette is already empty.');
+            return;
+        }
+
+        if (!isClearAllArmed) {
+            isClearAllArmed = true;
+            clearAllBtn.textContent = 'Confirm Clear';
+            showNotification('Click again to confirm clear all.');
+
+            clearAllResetTimeoutId = setTimeout(() => {
+                isClearAllArmed = false;
+                clearAllBtn.textContent = CLEAR_ALL_DEFAULT_LABEL;
+            }, 2500);
+            return;
+        }
+
+        // Confirmation received - clear all colors
+        isClearAllArmed = false;
+        clearAllBtn.textContent = CLEAR_ALL_DEFAULT_LABEL;
+        
+        chrome.storage.local.set({ savedColors: [] }, () => {
+            renderSavedColors([]);
+            showNotification('All colors cleared!');
+        });
+    });
+});
+```
+
+<Note>
+  Clearing your palette cannot be undone. Make sure to export your colors before clearing if you want to keep a backup.
+</Note>
+
+## Data persistence
+
+All saved colors are stored in Chrome's local storage and persist across:
+- Browser restarts
+- Extension updates
+- Different browsing sessions
+
+```javascript
+// popup.js:84-116
+function loadUserData() {
+    chrome.storage.local.get(['settings', 'savedColors', 'theme', 'lastPickedColor'], (result) => {
+        // Load settings
+        settings = sanitizeSettings(result.settings);
+        // Load saved colors
+        const savedColors = result.savedColors || [];
+        renderSavedColors(savedColors);
+        // ...
+    });
+}
+```
+
+## Empty state
+
+When your palette is empty, a helpful message is displayed:
+
+> "No colors saved yet. Pick a color to start."
+
+This guides new users to start using the color picker feature.

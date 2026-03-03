@@ -1,0 +1,250 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for Click-n-Color Chrome Extension
+---
+
+## Extension not working on certain pages
+
+<Warning>
+The color picker only works on regular web pages (HTTP/HTTPS). It cannot access Chrome internal pages or restricted URLs.
+</Warning>
+
+Click-n-Color requires specific permissions to function on web pages. If the extension isn't working:
+
+**Unsupported pages:**
+- Chrome internal pages (`chrome://`, `chrome-extension://`)
+- Chrome Web Store pages
+- Browser settings pages
+- Some enterprise-restricted pages
+
+**Solution:**
+Navigate to a regular website (any HTTP or HTTPS URL) and try again. The extension will display an error message if the page is not supported.
+
+## Color picker not activating on first click
+
+<Info>
+Version 1.1.0 significantly improved first-click reliability with better handshake and retry mechanisms.
+</Info>
+
+If the color picker doesn't activate immediately:
+
+1. **Wait a moment** - The extension needs to inject the content script and capture a screenshot of the page
+2. **Click the extension icon again** - Sometimes the first activation needs an extra second
+3. **Refresh the page** - If the issue persists, refresh the webpage and try again
+4. **Check console** - Open DevTools (F12) to see if there are any error messages
+
+**Technical details:**
+The extension uses a retry mechanism (up to 6 attempts with 120ms intervals) to establish communication between the popup and content script. If early clicks occur before the screenshot is ready, they are buffered and processed once initialization completes.
+
+## Colors not being saved
+
+### Check your palette size limit
+
+By default, Click-n-Color saves up to 50 colors. Once this limit is reached, new colors replace the oldest ones.
+
+**To adjust the palette size:**
+
+1. Click the extension icon
+2. Click the **Settings** button (gear icon)
+3. Modify **Max palette size** (range: 10-100)
+4. Click **Save settings**
+
+### Storage issues
+
+If colors aren't persisting between sessions:
+
+1. Check if Chrome has sufficient storage permissions
+2. Try clearing the extension's storage:
+   - Go to `chrome://extensions/`
+   - Find Click-n-Color
+   - Click **Remove** and reinstall
+
+<Note>
+All saved colors are stored locally using `chrome.storage.local` and persist across browser sessions unless you clear extension data.
+</Note>
+
+## Clipboard copy not working
+
+### Auto-copy feature
+
+If colors aren't automatically copying to your clipboard:
+
+1. Open **Settings**
+2. Ensure **Auto-copy** is enabled (toggle should be ON)
+3. Save settings and try picking a color again
+
+### Browser permissions
+
+Some browsers or security policies may block clipboard access:
+
+- **Check browser permissions** - Ensure the extension has clipboard access
+- **Try manual copy** - Click the **Copy** button in the popup instead of relying on auto-copy
+- **Browser compatibility** - The extension uses the modern `navigator.clipboard` API
+
+<Warning>
+If you see "Clipboard copy failed. Check permissions." the extension cannot access the clipboard API. This may be due to browser security policies or extensions blocking clipboard access.
+</Warning>
+
+## HEX colors showing incorrect values
+
+<Info>
+Version 1.1.0 fixed HEX conversion issues. Ensure you're running the latest version.
+</Info>
+
+If HEX color values appear incorrect:
+
+1. **Update the extension** - HEX conversion was fixed in v1.1.0
+2. **Check the format** - Switch between RGB, HEX, and HSL formats to verify
+3. **Re-pick the color** - Sometimes picking the color again resolves display issues
+
+The HEX conversion formula:
+```javascript
+#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}
+```
+
+## Export functionality issues
+
+### JSON export not downloading
+
+If the JSON export doesn't trigger a download:
+
+- **Check browser download settings** - Ensure downloads aren't being blocked
+- **Pop-up blocker** - Some browsers may block automatic downloads
+- **Try again** - Click the export button again
+
+### PNG export showing error
+
+The image export uses HTML5 Canvas. If it fails:
+
+1. **Check if you have saved colors** - The export requires at least one color in your palette
+2. **Browser compatibility** - Ensure your browser supports `canvas.toBlob()`
+3. **Try a different format** - Export as JSON or CSS instead
+
+<Note>
+If `canvas.toBlob()` returns null, the extension will show "Image export failed!" This is a known edge case that has been handled in v1.1.0.
+</Note>
+
+### CSS variables export format
+
+CSS exports create variables in this format:
+```css
+:root {
+  --color-1: #ff0000;
+  --color-2: #00ff00;
+  --color-3: #0000ff;
+}
+```
+
+All colors are automatically converted to HEX format for CSS compatibility.
+
+## Extension popup not appearing
+
+### Popup window issues
+
+If clicking the extension icon doesn't open the popup:
+
+1. **Pin the extension** - Click the puzzle icon in Chrome and pin Click-n-Color
+2. **Check if popup is blocked** - Some browser policies may prevent popups
+3. **Restart Chrome** - Close and reopen the browser
+4. **Reinstall** - Remove and reinstall the extension
+
+### Fallback window mode
+
+If `chrome.action.openPopup()` fails, the extension attempts to open a standalone window:
+- Size: 560x760 pixels
+- Type: Popup window
+- Focused by default
+
+## Theme not applying correctly
+
+### Available themes
+
+Click-n-Color supports three themes:
+- **Default** (Dark) - Purple/Blue accent
+- **Light** - Light background with dark text
+- **Blue** - Recommended by the creator, dark blue theme
+
+### Reset theme settings
+
+If themes aren't switching properly:
+
+1. Open **Themes** modal
+2. Select your desired theme
+3. Click **Save theme settings**
+4. Close and reopen the popup
+
+<Info>
+Themes are validated on load. If an invalid theme value is stored, the extension defaults to the "default" (dark) theme.
+</Info>
+
+## Performance issues
+
+### Popup feels slow
+
+The extension is optimized for performance, but if you experience slowness:
+
+- **Large palette** - Reduce max palette size if you have 100 colors saved
+- **Browser resources** - Close unnecessary tabs to free up memory
+- **Disable auto-copy temporarily** - If clipboard operations are slow
+
+### Magnifier lag
+
+The magnifier updates on mouse move using:
+```javascript
+const color = getColorAt(clientX, clientY);
+magnifier.style.backgroundColor = color;
+```
+
+If you experience lag:
+- Move your mouse more slowly
+- Ensure no other extensions are interfering
+- Check if high-DPI displays are causing performance issues
+
+## Clear all not working
+
+### Two-step confirmation
+
+Click-n-Color uses a safety mechanism to prevent accidental deletion:
+
+1. **First click** - Button changes to "Confirm Clear"
+2. **Second click within 2.5 seconds** - All colors are cleared
+3. **Wait too long** - Button resets to "Clear All"
+
+<Warning>
+This is intentional behavior to prevent accidental palette deletion. You must click twice within 2.5 seconds.
+</Warning>
+
+## Developer mode issues
+
+### Extension not loading in developer mode
+
+If you're loading the extension as unpacked:
+
+1. Ensure **Developer mode** is enabled in `chrome://extensions/`
+2. Click **Load unpacked**
+3. Select the **root folder** containing `manifest.json`
+4. Check for console errors
+
+### Manifest V3 compatibility
+
+Click-n-Color uses Manifest V3. If you're migrating from an older version:
+- Background pages are now service workers (`background.js`)
+- Requires `activeTab`, `storage`, and `scripting` permissions
+- No persistent host permissions needed
+
+## Getting help
+
+If your issue isn't listed here:
+
+1. **Check the console** - Press F12 and look for errors
+2. **Verify extension version** - Ensure you're on v1.1.0 or later
+3. **Review the changelog** - Check if your issue was fixed in recent updates
+4. **File an issue** - Visit the [GitHub repository](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension) to report bugs
+
+<Info>
+When reporting issues, include:
+- Extension version
+- Chrome version
+- Steps to reproduce
+- Console error messages (if any)
+</Info>

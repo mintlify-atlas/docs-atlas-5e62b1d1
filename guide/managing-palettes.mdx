@@ -1,0 +1,185 @@
+---
+title: Managing palettes
+description: Organize, view, and manage your saved color palettes in Click-n-Color
+---
+
+Click-n-Color automatically saves every color you pick to your palette, making it easy to build and manage collections of colors from your design work.
+
+## Color palette overview
+
+The Color Palette section displays all your saved colors in a grid layout with up to 7 columns. Each color appears as a clickable square that shows the color value on hover.
+
+```javascript
+// From popup.js:467
+function renderSavedColors(colors) {
+    savedColorsList.innerHTML = '';
+    if (colors.length === 0) {
+        // Show empty state
+        const emptyState = document.createElement('div');
+        emptyState.innerHTML = 'No colors saved yet. Pick a color to start.';
+    }
+    // ... render color squares
+}
+```
+
+## Viewing saved colors
+
+Your palette is displayed in a scrollable grid:
+
+- **Grid layout**: 7 columns with automatic wrapping (popup.css:256-258)
+- **Maximum height**: 200px with scrollbar for overflow (popup.css:259)
+- **Visual feedback**: Hover over any color to see its value in a tooltip (popup.css:302-324)
+
+<Note>
+  The grid uses a custom scrollbar styled to match the extension theme. On hover, each color card scales up slightly for better visibility.
+</Note>
+
+## Selecting colors from your palette
+
+Click any saved color to:
+1. Load it into the main color preview area
+2. Automatically copy it to your clipboard
+3. Display it in the currently selected format (RGB, HEX, or HSL)
+
+```javascript
+// From popup.js:493
+colorDiv.addEventListener('click', () => {
+    setSelectedColor(color);
+    copyTextToClipboard(colorValue.textContent);
+});
+```
+
+<Tip>
+  This is a quick way to access previously picked colors without having to pick them again from the page.
+</Tip>
+
+## Deleting individual colors
+
+<Steps>
+  <Step title="Hover over the color">
+    Move your mouse over the color you want to remove. A delete button (×) will appear in the top-right corner of the color square.
+  </Step>
+  
+  <Step title="Click the delete button">
+    Click the × button to remove the color from your palette.
+    
+    ```javascript
+    // From popup.js:486
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteColor(color);
+        showNotification('Color removed!');
+    });
+    ```
+  </Step>
+  
+  <Step title="Confirm removal">
+    The color will be immediately removed and a notification will confirm the deletion.
+  </Step>
+</Steps>
+
+<Info>
+  Clicking the delete button stops event propagation, so it won't trigger the color selection action.
+</Info>
+
+## Clearing all colors
+
+To remove all colors from your palette at once:
+
+<Steps>
+  <Step title="Click 'Clear All'">
+    Click the **Clear All** button in the Color Palette section header.
+  </Step>
+  
+  <Step title="Confirm the action">
+    The button text changes to **Confirm Clear**. You have 2.5 seconds to confirm by clicking again.
+    
+    ```javascript
+    // From popup.js:201
+    clearAllBtn.addEventListener('click', () => {
+        if (!isClearAllArmed) {
+            isClearAllArmed = true;
+            clearAllBtn.textContent = 'Confirm Clear';
+            // Reset after 2.5 seconds
+            setTimeout(() => {
+                isClearAllArmed = false;
+                clearAllBtn.textContent = 'Clear All';
+            }, 2500);
+        } else {
+            // Clear all colors
+            chrome.storage.local.set({ savedColors: [] });
+        }
+    });
+    ```
+  </Step>
+  
+  <Step title="Completion">
+    If confirmed, all colors are removed and you'll see the empty state message.
+  </Step>
+</Steps>
+
+<Note>
+  The two-step confirmation prevents accidental deletion of your entire palette. If you don't click again within 2.5 seconds, the action is canceled.
+</Note>
+
+## Palette size limits
+
+Your palette has a configurable maximum size:
+
+- **Default limit**: 50 colors
+- **Adjustable range**: 10 to 100 colors
+- **Behavior**: When the limit is reached, the oldest color is removed when a new one is added
+
+```javascript
+// From background.js:110
+if (!savedColors.includes(message.color)) {
+    savedColors.unshift(message.color);  // Add to beginning
+    if (savedColors.length > maxPaletteSize) {
+        savedColors = savedColors.slice(0, maxPaletteSize);
+    }
+}
+```
+
+<Tip>
+  You can adjust the maximum palette size in [Settings](/guide/settings) between 10 and 100 colors.
+</Tip>
+
+## Empty state
+
+When your palette is empty, you'll see a message:
+
+> No colors saved yet. Pick a color to start.
+
+The empty state is displayed in a centered card with reduced opacity (popup.css:372-383).
+
+## Color storage
+
+Colors are stored using Chrome's local storage API:
+
+- **Persistence**: Colors persist across browser sessions
+- **Format**: Stored as RGB strings in an array
+- **Sync**: Changes are synced in real-time across all open popups
+
+```javascript
+// From popup.js:140
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (changes.savedColors) {
+        const updatedColors = changes.savedColors.newValue || [];
+        renderSavedColors(updatedColors);
+    }
+});
+```
+
+## Visual design
+
+Each color square in the palette:
+
+- **Size**: 1:1 aspect ratio, responsive to grid width
+- **Border**: 2px transparent border (becomes visible on selection)
+- **Shadow**: 0 3px 6px with increased depth on hover
+- **Border radius**: 8px for rounded corners
+- **Hover effect**: Scales to 105% with increased z-index
+
+<Info>
+  The palette grid has a custom scrollbar that uses your selected theme's primary color for the thumb.
+</Info>

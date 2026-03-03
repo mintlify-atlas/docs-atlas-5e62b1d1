@@ -1,80 +1,217 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Get started with Click-n-Color in minutes and pick your first color
 ---
 
-## Get started in three steps
+Get started with Click-n-Color and pick your first color in just a few clicks.
 
-Get your documentation site running locally and make your first customization.
+## Pick your first color
 
-### Step 1: Set up your local environment
+<Steps>
+  <Step title="Open the extension">
+    Click the Click-n-Color icon in your browser toolbar. If you don't see it, click the extensions icon (puzzle piece) and pin Click-n-Color.
+  </Step>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+  <Step title="Click 'Pick a Color'">
+    In the popup window, click the **Pick a Color** button. The popup will close and your mouse cursor will change to a crosshair.
+  </Step>
+
+  <Step title="Select a color">
+    Move your cursor over any part of the webpage. You'll see a magnifier showing the color under your cursor. Click to select that color.
+  </Step>
+
+  <Step title="Color is saved">
+    The popup will reopen automatically showing your picked color. The color is:
+    - Displayed in the color preview box
+    - Shown in your selected format (RGB by default)
+    - Automatically copied to your clipboard (if auto-copy is enabled)
+    - Saved to your palette
+  </Step>
+</Steps>
+
+<Info>
+The extension captures a screenshot of the visible page to enable precise color picking. This happens instantly when you click "Pick a Color."
+</Info>
+
+## Understanding the interface
+
+The Click-n-Color popup has several sections:
+
+### Current color display
+
+At the top of the popup, you'll see:
+- **Color preview box** - Visual representation of your selected color
+- **Color value** - The color code in your chosen format
+- **Format chips** - Switch between RGB, HEX, and HSL formats by clicking the chips
+- **Copy button** - Manually copy the color value to clipboard
+
+### Color palette
+
+The main section shows your saved colors:
+- Click any saved color to select it and copy to clipboard
+- Hover over a color to see the delete button (×)
+- Colors are ordered by recency (newest first)
+- Up to 50 colors by default (configurable in settings)
+
+### Action buttons
+
+At the bottom:
+- **Export Palette** - Export your colors as JSON, CSS Variables, or PNG
+- **Settings** - Configure default format, palette size, and auto-copy
+- **Themes** - Choose between Dark, Light, or Blue themes
+
+## Working with picked colors
+
+### Switch color formats
+
+Click the format chips (RGB, HEX, HSL) to instantly convert your selected color:
+
+```
+RGB: rgb(138, 43, 226)
+HEX: #8a2be2
+HSL: hsl(271, 76%, 53%)
+```
+
+The conversion happens instantly without re-picking the color.
+
+### Copy to clipboard
+
+<Tabs>
+  <Tab title="Auto-copy (Default)">
+    By default, colors are automatically copied when picked. Look for the "Color copied to clipboard!" notification.
+  </Tab>
+  
+  <Tab title="Manual copy">
+    Click the **Copy to clipboard** button below the color value to copy at any time.
+  </Tab>
+</Tabs>
+
+### Delete colors
+
+To remove a color from your palette:
+1. Hover over the saved color square
+2. Click the **×** button that appears
+3. The color is immediately removed
+
+### Clear all colors
+
+To clear your entire palette:
+1. Click the **Clear All** button
+2. Click **Confirm Clear** when prompted
+3. All colors are removed from your palette
+
+<Warning>
+The clear operation cannot be undone. Export your palette first if you want to keep a backup.
+</Warning>
+
+## Export your palette
+
+<Steps>
+  <Step title="Open export dialog">
+    Click the **Export Palette** button at the bottom of the popup.
+  </Step>
+
+  <Step title="Choose format">
+    Select one of three export formats:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    - **JSON** - Array of color values for use in code
+    - **CSS Variables** - Custom properties ready to use in stylesheets
+    - **PNG Image** - Visual grid of your color palette
+  </Step>
 
-### Step 2: Deploy your changes
+  <Step title="Download file">
+    The file will download automatically to your default downloads folder.
+  </Step>
+</Steps>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Tip>
+Export your palette regularly to back up your colors or share them across projects.
+</Tip>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## Customize your settings
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+### Change default format
 
-### Step 3: Go live
+1. Click **Settings** button
+2. Select your preferred format: RGB, HEX, or HSL
+3. Click **Save settings**
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+Your chosen format will be automatically selected when you open the extension.
+
+### Adjust palette size
+
+The default maximum is 50 colors, but you can change it:
+
+1. Click **Settings**
+2. Enter a number between 10 and 100 in **Max palette size**
+3. Click **Save settings**
+
+When the limit is reached, the oldest colors are automatically removed.
+
+### Toggle auto-copy
+
+1. Click **Settings**
+2. Toggle the **Auto-copy on Pick** switch
+3. Click **Save settings**
+
+When enabled, colors are automatically copied to clipboard when picked.
+
+## Choose a theme
+
+Click-n-Color includes three beautiful themes:
+
+1. Click the **Themes** button
+2. Select **Dark** (default), **Light**, or **Blue**
+3. Click **Save theme**
+
+The interface instantly updates with your chosen theme's color scheme.
+
+<Tip>
+The Blue theme is highly recommended by the creator for the best visual experience.
+</Tip>
+
+## Keyboard shortcuts
+
+- **ESC** - Cancel color picking mode
+- **Click** - Pick the color under cursor
+- **Mouse move** - Preview color in magnifier
+
+## Tips for best results
+
+<CardGroup cols={2}>
+  <Card title="Zoom for precision" icon="magnifying-glass">
+    Zoom in on the webpage for more precise color picking on small elements.
+  </Card>
+
+  <Card title="Use format chips" icon="palette">
+    Switch between formats after picking to get the exact format you need.
+  </Card>
+
+  <Card title="Export regularly" icon="download">
+    Export your palette to avoid losing colors if you clear accidentally.
+  </Card>
+
+  <Card title="Organize by project" icon="folder">
+    Use the clear function between projects to keep palettes focused.
+  </Card>
+</CardGroup>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
+  <Card title="Explore features" icon="sparkles" href="/features/color-picking">
+    Learn about advanced color picking features
+  </Card>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+  <Card title="Export formats" icon="file-export" href="/guide/export-formats">
+    Discover all export format options
+  </Card>
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+  <Card title="Customize settings" icon="gear" href="/guide/settings">
+    Fine-tune the extension to your workflow
+  </Card>
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Technical details" icon="code" href="/technical/architecture">
+    Understand how the extension works
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

@@ -1,0 +1,237 @@
+---
+title: Export options
+description: Export your color palette in multiple formats for use in your projects
+---
+
+Click-n-Color provides three different export formats, allowing you to use your color palettes in various development and design workflows.
+
+## Export formats
+
+Access the export modal by clicking the **Export Palette** button in the popup. You'll see three export options:
+
+<Accordion title="JSON format">
+  Export your palette as a JSON array containing all color values. Perfect for importing into other tools or storing as project configuration.
+  
+  ### File format
+  
+  ```json
+  [
+    "rgb(138, 43, 226)",
+    "rgb(0, 191, 255)",
+    "rgb(255, 20, 20)"
+  ]
+  ```
+  
+  ### Implementation
+  
+  ```javascript
+  // popup.js:375-390
+  function exportAsJson() {
+      chrome.storage.local.get(['savedColors'], (result) => {
+          const savedColors = result.savedColors || [];
+          const dataStr = JSON.stringify(savedColors, null, 2);
+          const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+          const exportFileName = 'color-palette.json';
+          const linkElement = document.createElement('a');
+          linkElement.setAttribute('href', dataUri);
+          linkElement.setAttribute('download', exportFileName);
+          linkElement.click();
+
+          exportPaletteModal.style.display = 'none';
+          showNotification('Palette exported as JSON!');
+      });
+  }
+  ```
+  
+  ### Output file
+  
+  - **Filename**: `color-palette.json`
+  - **Encoding**: UTF-8
+  - **Formatting**: Pretty-printed with 2-space indentation
+</Accordion>
+
+<Accordion title="CSS variables">
+  Export your colors as CSS custom properties (variables) in a `:root` selector. Ideal for integrating directly into your stylesheets.
+  
+  ### File format
+  
+  ```css
+  :root {
+    --color-1: #8a2be2;
+    --color-2: #00bfff;
+    --color-3: #ff1414;
+  }
+  ```
+  
+  ### Implementation
+  
+  ```javascript
+  // popup.js:392-411
+  function exportAsCss() {
+      chrome.storage.local.get(['savedColors'], (result) => {
+          const savedColors = result.savedColors || [];
+          let cssVars = ':root {\n';
+          savedColors.forEach((color, index) => {
+              // Convert all colors to hex for CSS
+              const hexColor = color.startsWith('#') ? color : rgbToHex(color);
+              cssVars += `  --color-${index + 1}: ${hexColor};\n`;
+          });
+          cssVars += '}';
+          const dataUri = 'data:text/css;charset=utf-8,' + encodeURIComponent(cssVars);
+          const exportFileName = 'color-variables.css';
+          const linkElement = document.createElement('a');
+          linkElement.setAttribute('href', dataUri);
+          linkElement.setAttribute('download', exportFileName);
+          linkElement.click();
+          exportPaletteModal.style.display = 'none';
+          showNotification('Palette exported as CSS variables!');
+      });
+  }
+  ```
+  
+  ### Features
+  
+  - **Variable naming**: Colors are numbered sequentially as `--color-1`, `--color-2`, etc.
+  - **Format**: All colors are converted to HEX format for CSS compatibility
+  - **Filename**: `color-variables.css`
+  
+  <Tip>
+    Import the CSS file into your project and reference colors using `var(--color-1)` in your stylesheets.
+  </Tip>
+</Accordion>
+
+<Accordion title="PNG image">
+  Export your palette as a PNG image showing color swatches in a grid layout. Useful for sharing palettes or creating visual references.
+  
+  ### Image specifications
+  
+  - **Format**: PNG
+  - **Color square size**: 50×50 pixels
+  - **Grid layout**: Up to 5 columns
+  - **Background**: Dark (#121212)
+  - **Padding**: 10px
+  - **Spacing**: 2px between swatches
+  
+  ### Implementation
+  
+  ```javascript
+  // popup.js:413-463
+  function exportAsImage() {
+      chrome.storage.local.get(['savedColors'], (result) => {
+          const savedColors = result.savedColors || [];
+          if (savedColors.length === 0) {
+              showNotification('No colors to export!');
+              exportPaletteModal.style.display = 'none';
+              return;
+          }
+          // Create canvas for the palette image
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const colorSize = 50; // Size of each color square
+          const padding = 10;
+          const cols = Math.min(5, savedColors.length);
+          const rows = Math.ceil(savedColors.length / cols);
+          canvas.width = cols * colorSize + padding * 2;
+          canvas.height = rows * colorSize + padding * 2;
+          // Fill background
+          ctx.fillStyle = '#121212';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          // Draw color squares
+          savedColors.forEach((color, index) => {
+              const row = Math.floor(index / cols);
+              const col = index % cols;
+              ctx.fillStyle = color;
+              ctx.fillRect(
+                  padding + col * colorSize,
+                  padding + row * colorSize,
+                  colorSize - 2,
+                  colorSize - 2
+              );
+          });
+          // Export canvas as PNG
+          canvas.toBlob((blob) => {
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.download = 'color-palette.png';
+              link.href = url;
+              link.click();
+              URL.revokeObjectURL(url);
+              exportPaletteModal.style.display = 'none';
+              showNotification('Palette exported as image!');
+          }, 'image/png');
+      });
+  }
+  ```
+  
+  ### Grid calculation
+  
+  The image automatically sizes based on your palette:
+  - Maximum 5 colors per row
+  - Rows calculated as `Math.ceil(totalColors / 5)`
+  - Canvas dimensions adjust to fit all colors
+  
+  ### Example layouts
+  
+  - **3 colors**: 3×1 grid (170px × 70px)
+  - **10 colors**: 5×2 grid (270px × 120px)
+  - **25 colors**: 5×5 grid (270px × 270px)
+  
+  <Note>
+    If your palette is empty, you'll receive a notification: "No colors to export!"
+  </Note>
+</Accordion>
+
+## Opening the export modal
+
+Click the **Export Palette** button (export icon) in the main popup:
+
+```javascript
+// popup.js:252-255
+exportBtn.addEventListener('click', () => {
+    exportPaletteModal.style.display = 'flex';
+});
+```
+
+## Closing the export modal
+
+You can close the export modal in three ways:
+
+1. **Close button**: Click the × button in the modal header
+2. **Outside click**: Click anywhere outside the modal
+3. **Escape key**: Press the Escape key
+
+```javascript
+// popup.js:272-290
+window.addEventListener('click', (e) => {
+    if (e.target === exportPaletteModal) {
+        exportPaletteModal.style.display = 'none';
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        exportPaletteModal.style.display = 'none';
+    }
+});
+```
+
+## Export notifications
+
+After each successful export, you'll see a confirmation notification:
+
+- **JSON**: "Palette exported as JSON!"
+- **CSS**: "Palette exported as CSS variables!"
+- **Image**: "Palette exported as image!"
+
+The notifications automatically disappear after 2 seconds.
+
+## Use cases
+
+<Info>
+  **JSON**: Import into design tools, version control, or configuration files
+  
+  **CSS**: Direct integration into web projects and stylesheets
+  
+  **PNG**: Share with team members, create mood boards, or visual documentation
+</Info>

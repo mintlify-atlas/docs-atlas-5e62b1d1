@@ -1,0 +1,266 @@
+---
+title: Settings configuration
+description: Customize Click-n-Color's behavior with default format, palette size, and auto-copy settings
+---
+
+Click-n-Color provides several configuration options to customize how the extension works for your workflow.
+
+## Opening settings
+
+Click the **Settings** button in the footer of the extension popup to open the settings modal.
+
+```javascript
+// From popup.js:257
+settingsBtn.addEventListener('click', () => {
+    settingsModal.style.display = 'flex';
+});
+```
+
+## Default color format
+
+Choose which color format is displayed by default when you pick or select colors.
+
+### Available formats
+
+<Tabs>
+  <Tab title="RGB">
+    Red, Green, Blue values from 0-255.
+    
+    **Example**: `rgb(138, 43, 226)`
+    
+    **Use case**: Web development, CSS styling, JavaScript color manipulation
+  </Tab>
+  
+  <Tab title="HEX">
+    Hexadecimal color code with 6 characters.
+    
+    **Example**: `#8a2be2`
+    
+    **Use case**: HTML/CSS, design tools, most common format for web colors
+  </Tab>
+  
+  <Tab title="HSL">
+    Hue, Saturation, Lightness percentages.
+    
+    **Example**: `hsl(271, 76%, 53%)`
+    
+    **Use case**: Advanced CSS, color theory work, easier color manipulation
+  </Tab>
+</Tabs>
+
+### Setting the default
+
+<Steps>
+  <Step title="Select your preferred format">
+    Choose one of the three radio button options in the settings modal.
+  </Step>
+  
+  <Step title="Save settings">
+    Click **Save Settings** to apply your choice.
+  </Step>
+  
+  <Step title="Immediate application">
+    The current color preview updates to your selected format immediately.
+    
+    ```javascript
+    // From popup.js:523
+    activateFormatChip(defaultFormat.toUpperCase());
+    updateColorValueFormat();
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  You can still switch between formats on-the-fly using the format chips (RGB, HEX, HSL) below the color preview, but the default format is what will be shown initially.
+</Note>
+
+## Maximum palette size
+
+Control how many colors can be stored in your palette before old colors are automatically removed.
+
+### Configuration
+
+- **Minimum**: 10 colors
+- **Maximum**: 100 colors
+- **Default**: 50 colors
+- **Input type**: Number field with validation
+
+### How it works
+
+When you set a maximum palette size:
+
+1. Enter a number between 10 and 100
+2. The value is validated and clamped to the valid range
+3. When your palette reaches the limit, the oldest color is removed when a new one is added
+
+```javascript
+// From popup.js:507
+function saveSettings() {
+    const parsedPaletteSize = parseInt(document.getElementById('maxPaletteSize').value, 10);
+    const maxPaletteSize = Number.isFinite(parsedPaletteSize)
+        ? Math.min(100, Math.max(10, parsedPaletteSize))
+        : 50;
+    document.getElementById('maxPaletteSize').value = maxPaletteSize;
+    // ...
+}
+```
+
+<Info>
+  If you enter a value outside the 10-100 range, it will be automatically adjusted to the nearest valid value when you save.
+</Info>
+
+### Validation logic
+
+```javascript
+// From popup.js:39
+function sanitizeSettings(rawSettings) {
+    const parsedPaletteSize = parseInt(safeSettings.maxPaletteSize, 10);
+    const maxPaletteSize = Number.isFinite(parsedPaletteSize)
+        ? Math.min(100, Math.max(10, parsedPaletteSize))  // Clamp between 10-100
+        : 50;  // Default fallback
+    return { maxPaletteSize, /* ... */ };
+}
+```
+
+<Tip>
+  If you're working on a project with a defined color system, set the palette size to match your design system's color count.
+</Tip>
+
+## Auto-copy on pick
+
+Automatically copy picked colors to your clipboard without needing to click the "Copy to clipboard" button.
+
+### Toggle control
+
+The auto-copy feature uses a toggle switch in the settings modal:
+
+- **ON (default)**: Colors are automatically copied when picked
+- **OFF**: You must manually click the copy button
+
+```javascript
+// From popup.js:349
+chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'colorPicked') {
+        const color = message.color;
+        setSelectedColor(color);
+        
+        // Auto-copy if enabled
+        if (settings.autoCopy) {
+            copyTextToClipboard(colorValue.textContent);
+        }
+    }
+});
+```
+
+### Benefits of auto-copy
+
+<Tabs>
+  <Tab title="Enabled">
+    - Faster workflow - no extra click needed
+    - Color is immediately ready to paste
+    - Notification confirms copy action
+    - Great for rapid color extraction
+  </Tab>
+  
+  <Tab title="Disabled">
+    - More control over clipboard
+    - Prevents accidental overwrites
+    - Useful when picking multiple colors to compare
+    - Click copy button when ready
+  </Tab>
+</Tabs>
+
+<Note>
+  The copy notification shows "Color copied to clipboard!" when auto-copy is triggered (popup.js:117-120).
+</Note>
+
+## Saving settings
+
+All settings are saved to Chrome's local storage and persist across browser sessions.
+
+<Steps>
+  <Step title="Configure your preferences">
+    Adjust any of the three settings:
+    - Default Color Format
+    - Maximum Palette Size
+    - Auto-copy on Pick
+  </Step>
+  
+  <Step title="Click Save Settings">
+    The save button is located in the modal footer.
+  </Step>
+  
+  <Step title="Confirmation">
+    You'll see a notification: "Settings saved!"
+    
+    The modal closes automatically and settings are applied immediately.
+  </Step>
+</Steps>
+
+### Storage implementation
+
+```javascript
+// From popup.js:519
+settings = {
+    defaultFormat,
+    maxPaletteSize,
+    autoCopy
+};
+
+chrome.storage.local.set({ settings }, () => {
+    settingsModal.style.display = 'none';
+    showNotification('Settings saved!');
+    
+    // Apply default format immediately
+    activateFormatChip(defaultFormat.toUpperCase());
+    updateColorValueFormat();
+});
+```
+
+## Default settings
+
+If no custom settings are saved, Click-n-Color uses these defaults:
+
+```javascript
+// From popup.js:22
+let settings = {
+    defaultFormat: 'rgb',
+    maxPaletteSize: 50,
+    autoCopy: true
+};
+```
+
+## Loading settings
+
+Settings are loaded when the popup opens:
+
+```javascript
+// From popup.js:83
+function loadUserData() {
+    chrome.storage.local.get(['settings', 'savedColors', 'theme', 'lastPickedColor'], (result) => {
+        settings = sanitizeSettings(result.settings);
+        
+        // Apply default format
+        activateFormatChip(settings.defaultFormat.toUpperCase());
+        
+        // Set form values in settings modal
+        document.querySelector(`input[name="defaultFormat"][value="${settings.defaultFormat}"]`).checked = true;
+        document.getElementById('maxPaletteSize').value = settings.maxPaletteSize;
+        document.getElementById('autoCopy').checked = settings.autoCopy;
+    });
+}
+```
+
+<Info>
+  Settings are sanitized on load to ensure valid values, protecting against corrupted storage data.
+</Info>
+
+## Closing the settings modal
+
+You can close the settings modal without saving by:
+
+- Clicking the × button in the modal header
+- Clicking outside the modal backdrop
+- Pressing the **Escape** key
+
+Changes are only applied when you click "Save Settings".

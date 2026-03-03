@@ -1,0 +1,290 @@
+---
+title: Theme options
+description: Customize the visual appearance of Click-n-Color with Dark, Light, and Blue themes
+---
+
+Click-n-Color includes three built-in themes to match your preferences and working environment.
+
+## Available themes
+
+The extension provides three theme options, each with a carefully designed color palette.
+
+### Dark theme (default)
+
+The default dark theme features purple and blue accent colors with a dark background.
+
+**Color variables**:
+```css
+--primary: #8a2be2;      /* Purple */
+--secondary: #00bfff;     /* Sky blue */
+--accent: #ff1414;        /* Red */
+--background: #121212;    /* Almost black */
+--text: #ffffff;          /* White */
+--card: #1e1e1e;          /* Dark gray */
+--hover: #f5e0e0;         /* Light pink */
+```
+
+<Note>
+  This theme is optimized for low-light environments and reduces eye strain during extended use.
+</Note>
+
+### Light theme
+
+A bright, clean theme with inverted colors for daytime use.
+
+**Color variables**:
+```css
+--primary: #8a2be2;       /* Purple (unchanged) */
+--secondary: #00bfff;     /* Sky blue (unchanged) */
+--accent: #ff1414;        /* Red (unchanged) */
+--background: #f5f5f5;    /* Light gray */
+--text: #333333;          /* Dark gray */
+--card: #e0e0e0;          /* Medium gray */
+--hover: #d0d0d0;         /* Darker gray */
+```
+
+```javascript
+// From popup.js:555
+if (theme === 'light') {
+    root.style.setProperty('--background', '#f5f5f5');
+    root.style.setProperty('--text', '#333333');
+    root.style.setProperty('--card', '#e0e0e0');
+    root.style.setProperty('--hover', '#d0d0d0');
+}
+```
+
+<Tip>
+  The light theme maintains the same accent colors as the dark theme but inverts the background and text colors for better readability in bright environments.
+</Tip>
+
+### Blue theme
+
+A professional blue theme with a darker background and blue accent colors.
+
+**Color variables**:
+```css
+--primary: #1e88e5;       /* Medium blue */
+--secondary: #64b5f6;     /* Light blue */
+--accent: #ff6d00;        /* Orange */
+--background: #0a1929;    /* Very dark blue */
+--card: #102a43;          /* Dark blue */
+--text: #ffffff;          /* White (unchanged) */
+--hover: #f5e0e0;         /* Light pink (unchanged) */
+```
+
+```javascript
+// From popup.js:560
+else if (theme === 'blue') {
+    root.style.setProperty('--primary', '#1e88e5');
+    root.style.setProperty('--secondary', '#64b5f6');
+    root.style.setProperty('--accent', '#ff6d00');
+    root.style.setProperty('--background', '#0a1929');
+    root.style.setProperty('--card', '#102a43');
+}
+```
+
+<Info>
+  The blue theme uses orange as the accent color instead of red, creating a complementary color scheme.
+</Info>
+
+## Changing themes
+
+<Steps>
+  <Step title="Open the themes modal">
+    Click the **Themes** button in the footer of the extension popup.
+    
+    ```javascript
+    // From popup.js:261
+    openThemesBtn.addEventListener('click', () => {
+        themesModal.style.display = 'flex';
+    });
+    ```
+  </Step>
+  
+  <Step title="Select a theme">
+    Choose from the three radio button options:
+    - Dark (Default)
+    - Light
+    - Blue
+  </Step>
+  
+  <Step title="Save your selection">
+    Click the **Save theme** button to apply your choice.
+    
+    ```javascript
+    // From popup.js:532
+    function saveThemeSettings() {
+        const selectedTheme = document.querySelector('input[name="theme"]:checked').value;
+        chrome.storage.local.set({ theme: selectedTheme }, () => {
+            themesModal.style.display = 'none';
+            showNotification('Theme saved!');
+            applyTheme(selectedTheme);
+        });
+    }
+    ```
+  </Step>
+</Steps>
+
+## Theme application
+
+Themes are applied using CSS custom properties (variables) that are set on the document root element.
+
+### Apply theme function
+
+```javascript
+// From popup.js:543
+function applyTheme(theme) {
+    const root = document.documentElement;
+    
+    // Reset to default theme
+    root.style.setProperty('--primary', '#8a2be2');
+    root.style.setProperty('--secondary', '#00bfff');
+    root.style.setProperty('--accent', '#ff1414');
+    root.style.setProperty('--background', '#121212');
+    root.style.setProperty('--text', '#ffffff');
+    root.style.setProperty('--card', '#1e1e1e');
+    root.style.setProperty('--hover', '#f5e0e0');
+    
+    // Apply theme-specific colors
+    if (theme === 'light') {
+        // ... set light theme variables
+    } else if (theme === 'blue') {
+        // ... set blue theme variables
+    }
+}
+```
+
+### Theme persistence
+
+Selected themes are saved to Chrome's local storage and automatically applied when the popup opens:
+
+```javascript
+// From popup.js:108
+function loadUserData() {
+    chrome.storage.local.get(['settings', 'savedColors', 'theme', 'lastPickedColor'], (result) => {
+        // Load theme
+        const theme = sanitizeTheme(result.theme);
+        const themeInput = document.querySelector(`input[name="theme"][value="${theme}"]`);
+        if (themeInput) {
+            themeInput.checked = true;
+        }
+        applyTheme(theme);
+    });
+}
+```
+
+## Theme validation
+
+The extension includes theme validation to ensure only valid themes are applied:
+
+```javascript
+// From popup.js:35
+const ALLOWED_THEMES = ['default', 'light', 'blue'];
+
+function sanitizeTheme(themeValue) {
+    return ALLOWED_THEMES.includes(themeValue) ? themeValue : 'default';
+}
+```
+
+<Note>
+  If an invalid theme value is stored (e.g., from corrupted data), the extension automatically falls back to the default dark theme.
+</Note>
+
+## Components affected by themes
+
+Themes change the appearance of all UI elements:
+
+<Tabs>
+  <Tab title="Headers">
+    - Main header with gradient (uses `--primary` and `--secondary`)
+    - Modal headers
+    - Section titles with gradient text
+  </Tab>
+  
+  <Tab title="Buttons">
+    - Pick Color button (uses `--accent` and `--primary`)
+    - Footer buttons (border uses `--secondary`)
+    - Action buttons
+  </Tab>
+  
+  <Tab title="Cards">
+    - Selected color display (uses `--card`)
+    - Saved colors grid background (uses `--card`)
+    - Empty state container
+  </Tab>
+  
+  <Tab title="Interactive elements">
+    - Format chips (active state uses `--accent`)
+    - Hover states (uses `--hover`)
+    - Focus outlines (uses `--secondary`)
+    - Scrollbar thumb (uses `--primary`)
+  </Tab>
+</Tabs>
+
+## Gradient effects
+
+Several UI elements use gradient effects with theme colors:
+
+### Header gradient
+
+```css
+/* From popup.css:43 */
+.header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+```
+
+### Button gradient
+
+```css
+/* From popup.css:82 */
+#pickColorBtn {
+    background: linear-gradient(45deg, var(--accent), var(--primary));
+}
+```
+
+### Section title gradient
+
+```css
+/* From popup.css:235 */
+.section-header h2 {
+    background: linear-gradient(90deg, var(--accent), var(--secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+```
+
+<Tip>
+  The gradient effects dynamically update when you change themes, creating smooth transitions between color schemes.
+</Tip>
+
+## Closing the themes modal
+
+You can close the themes modal by:
+
+- Clicking the × button in the modal header
+- Clicking outside the modal backdrop
+- Pressing the **Escape** key
+- Clicking "Save theme" (applies and closes)
+
+```javascript
+// From popup.js:284
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        themesModal.style.display = 'none';
+    }
+});
+```
+
+## Accessibility
+
+All themes are designed with accessibility in mind:
+
+- **Contrast ratios**: Text meets WCAG AA standards for contrast
+- **Focus indicators**: Clear focus outlines using `--secondary` color
+- **Color-blind friendly**: Themes rely on brightness and saturation differences, not just hue
+
+<Info>
+  The light theme is particularly useful for users who prefer higher contrast or work in bright environments where dark themes may be harder to read.
+</Info>

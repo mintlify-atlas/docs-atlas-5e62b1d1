@@ -1,0 +1,137 @@
+---
+title: Installation
+description: Install the Click-n-Color extension in Google Chrome
+---
+
+# Installation
+
+Click-n-Color is a Chrome extension that you can install locally from source. Follow these steps to get it running in your browser.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Google Chrome** browser installed
+- The Click-n-Color source code (cloned or downloaded)
+
+## Install from source
+
+<Steps>
+  <Step title="Get the source code">
+    Clone the repository or download the ZIP file:
+    
+    ```bash
+    git clone https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension.git
+    ```
+    
+    Or [download the ZIP file](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension/archive/refs/heads/main.zip) and extract it to a folder on your computer.
+  </Step>
+  
+  <Step title="Open Chrome extensions page">
+    Navigate to the Chrome extensions management page:
+    
+    - Type `chrome://extensions/` in your address bar and press Enter
+    - Or click the three-dot menu → **More tools** → **Extensions**
+  </Step>
+  
+  <Step title="Enable developer mode">
+    Toggle the **Developer mode** switch in the top-right corner of the extensions page.
+    
+    <Note>
+      Developer mode is required to install unpacked extensions from source code.
+    </Note>
+  </Step>
+  
+  <Step title="Load the extension">
+    Click the **Load unpacked** button that appears after enabling developer mode.
+    
+    In the file picker dialog, navigate to and select the Click-n-Color project folder (the folder containing `manifest.json`).
+  </Step>
+  
+  <Step title="Verify installation">
+    After loading, you should see the Click-n-Color extension card appear in your extensions list with:
+    
+    - Extension name: **Color-Picker**
+    - Version: **1.1.0**
+    - Status: **Enabled**
+    
+    You'll also see the extension icon in your Chrome toolbar.
+  </Step>
+</Steps>
+
+## Pin the extension
+
+For easy access, pin the extension to your Chrome toolbar:
+
+1. Click the **Extensions** puzzle piece icon in the Chrome toolbar
+2. Find **Color-Picker** in the list
+3. Click the **pin** icon next to it
+
+The Click-n-Color icon will now be permanently visible in your toolbar.
+
+<Tip>
+  Pinning the extension makes it much faster to access when you need to pick colors while browsing.
+</Tip>
+
+## Required permissions
+
+Click-n-Color requires the following permissions to function:
+
+| Permission | Purpose |
+|------------|----------|
+| `activeTab` | Access the current tab to capture screenshots and pick colors |
+| `storage` | Save your color palette and settings locally |
+| `scripting` | Inject the color picker script into web pages |
+
+<Info>
+  All permissions are used only when you activate the color picker. The extension does not access your browsing data or send information to external servers.
+</Info>
+
+## File structure
+
+The extension contains these core files:
+
+```
+click-n-color/
+├── background.js          # Service worker for storage initialization
+├── content.js             # Color picker overlay and logic
+├── popup.html             # Extension popup UI
+├── popup.css              # Themed styles
+├── popup.js               # Color management and event handling
+├── manifest.json          # Extension configuration (Manifest V3)
+└── icon.png               # Extension icon
+```
+
+## Troubleshooting
+
+### Extension not appearing
+
+If the extension doesn't appear after loading:
+
+- Make sure you selected the correct folder (the one containing `manifest.json`)
+- Check for errors in the extensions page
+- Try reloading the extension using the reload icon
+
+### Color picker not working
+
+If the color picker doesn't activate:
+
+- Make sure you're on a regular webpage (not `chrome://` or extension pages)
+- Check that the extension has the required permissions
+- Try reloading the webpage and clicking the extension icon again
+
+### Errors in console
+
+If you see errors in the Chrome DevTools console:
+
+- Make sure all extension files are present and unmodified
+- Try removing and reinstalling the extension
+- Check that you're using a recent version of Chrome
+
+<Warning>
+  The color picker only works on `http://` and `https://` web pages. It cannot access Chrome internal pages, the Chrome Web Store, or other extension pages due to browser security restrictions.
+</Warning>
+
+## What's next?
+
+Now that you have Click-n-Color installed, learn how to use it in the [Quick start guide](/quickstart).

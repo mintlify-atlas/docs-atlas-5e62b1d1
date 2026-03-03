@@ -1,0 +1,195 @@
+---
+title: Changelog
+description: Version history and changes for Click-n-Color Chrome Extension
+---
+
+## Overview
+
+All notable changes to Click-n-Color are documented on this page. The extension follows [semantic versioning](https://semver.org/).
+
+## Version history
+
+### [1.1.0] - 2026-03-02
+
+Major stability and quality release with numerous bug fixes and improvements.
+
+<Accordion title="Fixed issues">
+  #### HEX conversion accuracy
+  Fixed HEX conversion output so exported and displayed HEX values are valid.
+  
+  ```javascript popup.js
+  function rgbToHex(rgb) {
+    const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (!match) return rgb;
+    const r = parseInt(match[1]);
+    const g = parseInt(match[2]);
+    const b = parseInt(match[3]);
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  }
+  ```
+  
+  #### Picker reliability
+  Fixed intermittent first-attempt picking failures by adding robust popup/content handshake and retries.
+  
+  - Implemented retry mechanism with 6 attempts and 120ms delays
+  - Added handshake confirmation between background and content scripts
+  - Content script responds with `{status: 'ready'}` to confirm initialization
+  
+  #### Race condition handling
+  Fixed picker startup race so early clicks are buffered and processed once screenshot data is ready.
+  
+  ```javascript content.js
+  let pendingClick = null;
+  
+  handleClick = (e) => {
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+
+    if (!isImageReady || !ctx || !canvas) {
+      pendingClick = { x: mouseX, y: mouseY };
+      return;
+    }
+
+    pickColorAt(mouseX, mouseY);
+  };
+  ```
+  
+  #### Memory leak prevention
+  Fixed multiple event-listener leaks in picker lifecycle cleanup.
+  
+  - Properly removes all event listeners during cleanup
+  - Clears timeout IDs
+  - Nullifies handler references
+  - Removes DOM elements
+  
+  #### Crash prevention
+  Fixed potential popup crashes from malformed persisted settings/theme values.
+  
+  - Added `sanitizeTheme()` function with allowed theme validation
+  - Added `sanitizeSettings()` function with type checking and bounds validation
+  - Clamped `maxPaletteSize` to 10-100 range
+  
+  #### Export reliability
+  Fixed image export edge case when `canvas.toBlob` returns null.
+  
+  ```javascript popup.js
+  canvas.toBlob((blob) => {
+    if (!blob) {
+      exportPaletteModal.style.display = 'none';
+      showNotification('Image export failed!');
+      return;
+    }
+    // ... proceed with export
+  }, 'image/png');
+  ```
+  
+  #### Palette size validation
+  Fixed max palette size handling with proper validation and clamping.
+  
+  - Validates numeric input
+  - Clamps to 10-100 range
+  - Defaults to 50 if invalid
+  
+  #### Content injection safety
+  Fixed content injection edge case when `document.body` is unavailable.
+  
+  ```javascript content.js
+  const rootNode = document.body || document.documentElement;
+  if (!rootNode) {
+    window.colorPickerInjected = false;
+    return;
+  }
+  ```
+  
+  #### CSS validation
+  Fixed invalid CSS declarations and removed conflicting duplicate `.colors-grid` styles.
+</Accordion>
+
+<Accordion title="Improvements">
+  #### Error messaging
+  Improved error feedback for unsupported/restricted pages and injection failures.
+  
+  Error messages now include:
+  - "No active tab found."
+  - "This page is not supported for color picking."
+  - "Unable to start picker on this page."
+  
+  #### Clipboard handling
+  Improved copy behavior with robust clipboard error handling.
+  
+  ```javascript popup.js
+  async function copyTextToClipboard(text, successMessage = 'Color copied to clipboard!') {
+    try {
+      await navigator.clipboard.writeText(text);
+      showNotification(successMessage);
+      return true;
+    } catch (error) {
+      console.error('Clipboard write failed:', error);
+      showNotification('Clipboard copy failed. Check permissions.');
+      return false;
+    }
+  }
+  ```
+  
+  #### Clear all UX
+  Improved clear-all UX with non-blocking two-step confirmation.
+  
+  - First click: Shows "Confirm Clear" button and notification
+  - Second click within 2.5 seconds: Clears all colors
+  - Auto-resets to "Clear All" if timeout expires
+  
+  #### Keyboard accessibility
+  Improved keyboard accessibility for format chips and focus-visible states.
+  
+  ```javascript popup.js
+  chip.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      chip.click();
+    }
+  });
+  ```
+  
+  - Added `role="button"`, `tabindex="0"`, and `aria-label` attributes
+  - Added `aria-pressed` state management
+  - Support for Enter and Space key activation
+  
+  #### Responsive design
+  Improved popup spacing, alignment, and narrow-width responsive behavior.
+  
+  #### Permission scope reduction
+  Reduced unnecessary permission scope by removing persistent `<all_urls>` host permission.
+  
+  - Only requests `activeTab` permission
+  - No persistent host permissions required
+  - More privacy-friendly approach
+</Accordion>
+
+## Migration guides
+
+### Upgrading to 1.1.0
+
+No breaking changes - this is a backwards-compatible release. Existing saved colors, settings, and themes will be preserved.
+
+#### What's changed
+
+- HEX color values will now display correctly (previously malformed values are automatically converted)
+- Settings and theme values are now validated on load (invalid values reset to defaults)
+- Color picking is more reliable with automatic retry logic
+
+#### New features
+
+- Two-step confirmation for clearing all colors
+- Better keyboard navigation with Enter/Space support on format chips
+- Improved error messages for unsupported pages
+
+## Future roadmap
+
+Planned features for upcoming releases:
+
+- Color harmony generator (complementary, analogous, triadic)
+- Color gradient generator
+- Export to more formats (SCSS, Less, Tailwind)
+- Color naming and organization
+- Keyboard shortcuts
+- History view with timestamps

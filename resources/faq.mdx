@@ -1,0 +1,374 @@
+---
+title: FAQ
+description: Frequently asked questions about Click-n-Color Chrome Extension
+---
+
+## General questions
+
+<Accordion title="What is Click-n-Color?">
+Click-n-Color is a Chrome extension that allows you to pick colors from any website, save them in a customizable palette, and export them in multiple formats (JSON, CSS, PNG). It's designed for developers, designers, and anyone who needs to capture and manage colors from web pages.
+</Accordion>
+
+<Accordion title="Is Click-n-Color free to use?">
+Yes, Click-n-Color is completely free and open-source under the MIT License. You can use it, modify it, and contribute to it on [GitHub](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension).
+</Accordion>
+
+<Accordion title="Which browsers are supported?">
+Click-n-Color is built for Google Chrome and Chromium-based browsers (Edge, Brave, Opera, etc.) using Manifest V3. It requires Chrome's extension APIs and may not work on Firefox or Safari without modifications.
+</Accordion>
+
+<Accordion title="Does it work offline?">
+Yes, the extension works offline once installed. However, you can only pick colors from locally accessible web pages. Color picking requires the webpage to be loaded and visible.
+</Accordion>
+
+## Features and functionality
+
+<Accordion title="How do I pick a color from a webpage?">
+1. Click the Click-n-Color extension icon in your Chrome toolbar
+2. Click the **Pick color** button in the popup
+3. Your cursor will change to a crosshair with a magnifier
+4. Move your mouse over any element to preview the color
+5. Click to select the color
+6. The color is automatically saved and copied to your clipboard (if auto-copy is enabled)
+</Accordion>
+
+<Accordion title="What color formats are supported?">
+Click-n-Color supports three color formats:
+- **RGB** - `rgb(255, 0, 0)`
+- **HEX** - `#ff0000`
+- **HSL** - `hsl(0, 100%, 50%)`
+
+You can switch between formats using the format chips in the popup, and set your default format in Settings.
+</Accordion>
+
+<Accordion title="How many colors can I save?">
+By default, you can save up to 50 colors in your palette. This limit is customizable in Settings:
+- **Minimum:** 10 colors
+- **Maximum:** 100 colors
+- **Default:** 50 colors
+
+When the limit is reached, the oldest color is automatically removed when you add a new one.
+</Accordion>
+
+<Accordion title="What export formats are available?">
+You can export your color palette in three formats:
+
+**JSON** - Array of color values
+```json
+[
+  "rgb(255, 0, 0)",
+  "#00ff00",
+  "rgb(0, 0, 255)"
+]
+```
+
+**CSS Variables** - Ready-to-use CSS custom properties
+```css
+:root {
+  --color-1: #ff0000;
+  --color-2: #00ff00;
+  --color-3: #0000ff;
+}
+```
+
+**PNG Image** - Visual grid of your color palette (50x50px squares on dark background)
+</Accordion>
+
+<Accordion title="Can I pick colors from images?">
+Yes! The extension captures a screenshot of the visible viewport and allows you to pick colors from any pixel on the page, including images, backgrounds, borders, and text.
+</Accordion>
+
+<Accordion title="Does the magnifier show the exact pixel color?">
+Yes, the magnifier displays the exact color of the pixel under your cursor. It accounts for device pixel ratio and uses canvas pixel data to ensure accuracy.
+</Accordion>
+
+## Settings and customization
+
+<Accordion title="What settings can I customize?">
+Click-n-Color offers several customization options:
+
+**Default color format**
+- RGB, HEX, or HSL
+- Determines which format is displayed when you pick a color
+
+**Max palette size**
+- Range: 10-100 colors
+- Controls how many colors can be saved
+
+**Auto-copy**
+- Enable/disable automatic clipboard copy when picking colors
+- When enabled, colors are immediately copied to your clipboard
+</Accordion>
+
+<Accordion title="Which theme should I use?">
+Click-n-Color offers three themes:
+
+**Default (Dark)** - Purple/blue accents on dark background
+- Best for low-light environments
+- Default theme on installation
+
+**Light** - Light background with dark text
+- Best for bright environments
+- High contrast for accessibility
+
+**Blue** - Dark blue theme with orange accents
+- Recommended by the creator
+- Professional look with vibrant accents
+
+Themes are purely visual and don't affect functionality.
+</Accordion>
+
+<Accordion title="How do I reset settings to default?">
+Currently, there's no built-in reset button. To reset settings:
+
+1. Open Settings
+2. Manually set values back to defaults:
+   - Default format: RGB
+   - Max palette size: 50
+   - Auto-copy: Enabled
+3. Click **Save settings**
+
+Alternatively, remove and reinstall the extension to completely reset all data.
+</Accordion>
+
+## Usage and workflow
+
+<Accordion title="Can I reorder saved colors?">
+Currently, colors are automatically ordered with the most recently picked color at the top. Manual reordering is not supported in the current version (v1.1.0).
+</Accordion>
+
+<Accordion title="How do I delete a single color?">
+Each saved color has a delete button (×) in the top-right corner:
+
+1. Hover over the color in your saved palette
+2. Click the **×** button
+3. The color is immediately removed
+
+A notification confirms the deletion: "Color removed!"
+</Accordion>
+
+<Accordion title="What happens when I click a saved color?">
+Clicking a saved color does two things:
+1. Updates the color preview at the top
+2. Copies the color value to your clipboard (in the currently selected format)
+
+This makes it easy to quickly reuse colors from your palette.
+</Accordion>
+
+<Accordion title="Can I use the same color palette across multiple devices?">
+No, the palette is stored locally using `chrome.storage.local` and doesn't sync across devices. To transfer your palette:
+
+1. Export as JSON on device A
+2. Save the JSON file
+3. Manually add the colors on device B
+
+Cloud sync is not currently supported.
+</Accordion>
+
+<Accordion title="Does picking a color affect the webpage?">
+No, the color picker is completely non-destructive. It:
+- Creates a temporary overlay with a crosshair cursor
+- Takes a screenshot of the visible viewport
+- Reads pixel data from the screenshot (not the actual DOM)
+- Removes all UI elements after picking
+
+The webpage remains unchanged and functional.
+</Accordion>
+
+## Technical questions
+
+<Accordion title="What permissions does the extension require?">
+Click-n-Color requires three permissions:
+
+**activeTab** - Access the current tab when you click the extension
+- Used to inject the color picker script
+- Only activates when you explicitly click "Pick color"
+
+**storage** - Store saved colors and settings locally
+- Saves your palette and preferences
+- No data is sent to external servers
+
+**scripting** - Execute the content script for color picking
+- Injects `content.js` to capture colors
+- Required for the interactive picker functionality
+
+Note: Version 1.1.0 removed the persistent `<all_urls>` permission for improved security.
+</Accordion>
+
+<Accordion title="Where is my data stored?">
+All data is stored locally in your browser using `chrome.storage.local`:
+
+- **savedColors** - Array of picked colors
+- **lastPickedColor** - Most recent color (for persistence)
+- **settings** - User preferences (format, palette size, auto-copy)
+- **theme** - Selected theme
+
+No data is transmitted to external servers. Everything stays on your device.
+</Accordion>
+
+<Accordion title="Why does the extension need a screenshot?">
+The extension captures a screenshot to read pixel color data accurately. This approach:
+
+- Works with all visual elements (CSS, images, canvas, SVG)
+- Captures the final rendered color (not computed styles)
+- Handles device pixel ratio correctly
+- Allows for the magnifier preview functionality
+
+The screenshot is temporary and stored only in memory during color picking.
+</Accordion>
+
+<Accordion title="Is the extension open source?">
+Yes! Click-n-Color is open source under the MIT License. You can:
+
+- View the source code on [GitHub](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension)
+- Report issues and bugs
+- Submit pull requests
+- Fork and modify for your needs
+- Use it in commercial projects
+
+Contributions are welcome!
+</Accordion>
+
+<Accordion title="What's new in version 1.1.0?">
+Version 1.1.0 (released March 2, 2026) includes:
+
+**Fixed:**
+- HEX conversion accuracy
+- First-click picker reliability
+- Event listener memory leaks
+- Settings validation and crash prevention
+- Export edge cases
+
+**Improved:**
+- Error messages for unsupported pages
+- Keyboard accessibility
+- Responsive popup layout
+- Clipboard error handling
+- Security with reduced permission scope
+
+See the full [changelog](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension/blob/main/CHANGELOG.md) for details.
+</Accordion>
+
+## Troubleshooting
+
+<Accordion title="Why can't I pick colors on some pages?">
+The extension only works on regular web pages (HTTP/HTTPS). It cannot access:
+
+- Chrome internal pages (`chrome://`)
+- Chrome Web Store
+- Browser settings
+- Some restricted enterprise pages
+
+This is a security limitation imposed by Chrome. See the [Troubleshooting](/resources/troubleshooting) page for more details.
+</Accordion>
+
+<Accordion title="The color picker doesn't activate on first try. What should I do?">
+Version 1.1.0 improved first-click reliability significantly. If issues persist:
+
+1. Wait 1-2 seconds and try again
+2. Refresh the webpage
+3. Check browser console for errors (F12)
+
+The extension uses a retry mechanism with up to 6 attempts to establish communication. Early clicks are buffered automatically.
+</Accordion>
+
+<Accordion title="Colors aren't copying to my clipboard. Why?">
+Check these common causes:
+
+1. **Auto-copy is disabled** - Enable in Settings
+2. **Browser security policy** - Some browsers block clipboard access
+3. **Permissions** - Ensure the extension has clipboard access
+4. **Try manual copy** - Click the Copy button instead
+
+See [Troubleshooting → Clipboard copy not working](/resources/troubleshooting#clipboard-copy-not-working) for detailed solutions.
+</Accordion>
+
+## Best practices
+
+<Accordion title="What's the best way to organize my color palette?">
+Since colors are automatically ordered by recency:
+
+1. **Pick related colors consecutively** - They'll group together at the top
+2. **Export frequently** - Save palettes for different projects
+3. **Use descriptive file names** - `project-name-colors.json`
+4. **Clear old colors** - Remove colors you no longer need
+5. **Adjust palette size** - Set to match your typical project needs
+</Accordion>
+
+<Accordion title="How should I use exported CSS variables?">
+Best practices for CSS variable exports:
+
+```css
+/* Import your exported CSS file */
+@import url('color-variables.css');
+
+/* Use in your styles */
+.button {
+  background: var(--color-1);
+  border: 1px solid var(--color-2);
+}
+
+/* Override for dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-1: #your-dark-variant;
+  }
+}
+```
+</Accordion>
+
+<Accordion title="When should I export as PNG vs CSS vs JSON?">
+Choose your export format based on use case:
+
+**PNG** - Visual reference
+- Share with clients or team members
+- Create mood boards
+- Document color schemes visually
+
+**CSS** - Web development
+- Direct use in stylesheets
+- Consistent naming with `--color-1`, `--color-2`, etc.
+- Easy to maintain and update
+
+**JSON** - Data interchange
+- Import into design tools
+- Process with scripts
+- Share across different platforms
+- Most flexible for programmatic use
+</Accordion>
+
+## Support and community
+
+<Accordion title="How do I report a bug?">
+To report bugs:
+
+1. Visit the [GitHub Issues page](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension/issues)
+2. Search existing issues to avoid duplicates
+3. Create a new issue with:
+   - Extension version
+   - Chrome version
+   - Steps to reproduce
+   - Expected vs actual behavior
+   - Console errors (if any)
+4. Add relevant screenshots or screen recordings
+</Accordion>
+
+<Accordion title="Can I request new features?">
+Yes! Feature requests are welcome:
+
+1. Check [existing issues](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension/issues) first
+2. Open a new issue with the "feature request" or "enhancement" label
+3. Describe the feature and use case
+4. Explain how it would improve the extension
+
+Or better yet, implement it yourself and submit a pull request!
+</Accordion>
+
+<Accordion title="Who created Click-n-Color?">
+Click-n-Color was created by [Nikhil Agarwal](https://github.com/nikhilagarwal03). You can connect with the creator on [Twitter/X](https://x.com/agarwal030).
+
+If you find the extension useful, consider:
+- Starring the [GitHub repository](https://github.com/nikhilagarwal03/Click-n-Color-Chrome-Extension)
+- Sharing it with other developers and designers
+- Contributing to the project
+</Accordion>

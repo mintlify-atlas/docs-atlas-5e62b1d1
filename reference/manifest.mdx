@@ -1,0 +1,179 @@
+---
+title: Manifest.json
+description: Extension manifest structure and configuration for Click-n-Color Chrome Extension
+---
+
+## Overview
+
+The manifest.json file defines the Chrome Extension's structure, permissions, and behavior. Click-n-Color uses Manifest V3, the latest Chrome Extension platform.
+
+## Manifest structure
+
+<ParamField path="manifest_version" type="number" required>
+  Specifies the manifest format version. Click-n-Color uses version 3.
+  
+  ```json
+  "manifest_version": 3
+  ```
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  The name of the extension displayed in the Chrome Web Store and extension management.
+  
+  ```json
+  "name": "Color-Picker"
+  ```
+</ParamField>
+
+<ParamField path="version" type="string" required>
+  The version number of the extension. Uses semantic versioning.
+  
+  ```json
+  "version": "1.1.0"
+  ```
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  A short description of what the extension does.
+  
+  ```json
+  "description": "Here's Extension, pin it, and use it on any website..."
+  ```
+</ParamField>
+
+## Permissions
+
+<ParamField path="permissions" type="array" required>
+  Declares the permissions the extension needs to function.
+  
+  <Accordion title="Permission details">
+    <ResponseField name="activeTab" type="permission">
+      Grants temporary access to the currently active tab. Used to capture screenshots of the visible page.
+    </ResponseField>
+    
+    <ResponseField name="storage" type="permission">
+      Allows the extension to use chrome.storage API to persist user data like saved colors, settings, and themes.
+    </ResponseField>
+    
+    <ResponseField name="scripting" type="permission">
+      Enables the extension to inject content scripts dynamically using chrome.scripting.executeScript().
+    </ResponseField>
+  </Accordion>
+  
+  ```json
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ]
+  ```
+</ParamField>
+
+## Action configuration
+
+<ParamField path="action" type="object" required>
+  Defines the extension's browser action (popup and icon).
+  
+  <Accordion title="Action properties">
+    <ResponseField name="default_popup" type="string">
+      The HTML file to display when the user clicks the extension icon.
+      
+      ```json
+      "default_popup": "popup.html"
+      ```
+    </ResponseField>
+    
+    <ResponseField name="default_icon" type="string">
+      The icon to display in the Chrome toolbar.
+      
+      ```json
+      "default_icon": "icon.png"
+      ```
+    </ResponseField>
+  </Accordion>
+</ParamField>
+
+## Background service worker
+
+<ParamField path="background" type="object" required>
+  Configures the background service worker that handles extension logic.
+  
+  ```json
+  "background": {
+    "service_worker": "background.js"
+  }
+  ```
+  
+  The background service worker:
+  - Listens for messages from popup and content scripts
+  - Captures visible tab screenshots
+  - Manages color storage
+  - Injects content scripts when needed
+</ParamField>
+
+## Icons
+
+<ParamField path="icons" type="object" required>
+  Defines icons for different display sizes throughout Chrome.
+  
+  ```json
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+  ```
+  
+  <Accordion title="Icon sizes">
+    <ResponseField name="16" type="string">
+      16x16 icon used in the extension management page and context menus.
+    </ResponseField>
+    
+    <ResponseField name="48" type="string">
+      48x48 icon used in the extension management page.
+    </ResponseField>
+    
+    <ResponseField name="128" type="string">
+      128x128 icon used in the Chrome Web Store and during installation.
+    </ResponseField>
+  </Accordion>
+</ParamField>
+
+## Complete manifest
+
+<CodeGroup>
+```json manifest.json
+{
+  "manifest_version": 3,
+  "name": "Color-Picker",
+  "version": "1.1.0",
+  "description": "Here's Extension, pin it, and use it on any website...",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
+```
+</CodeGroup>
+
+## Manifest V3 migration notes
+
+Click-n-Color uses Manifest V3, which offers several improvements over V2:
+
+- **Service workers** replace background pages for better performance
+- **Dynamic content script injection** via scripting API instead of static content_scripts
+- **Reduced permission scope** - no persistent host permissions required
+- **Better security** with stricter CSP and remote code restrictions

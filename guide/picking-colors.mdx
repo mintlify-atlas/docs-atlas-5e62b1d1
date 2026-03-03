@@ -1,0 +1,115 @@
+---
+title: Picking colors
+description: Learn how to pick colors from any webpage using Click-n-Color's color picker tool
+---
+
+Click-n-Color makes it easy to extract colors from any webpage. The extension captures a screenshot of the visible page and allows you to click on any pixel to get its exact color value.
+
+## Starting the color picker
+
+<Steps>
+  <Step title="Open the extension">
+    Click the Click-n-Color icon in your browser toolbar to open the popup interface.
+  </Step>
+  
+  <Step title="Click 'Pick a Color'">
+    Click the **Pick a Color** button at the top of the popup. The popup will close and the color picker will activate on the current page.
+    
+    ```javascript
+    // From popup.js:163
+    pickColorBtn.addEventListener('click', () => {
+        chrome.runtime.sendMessage({ type: 'startColorPick' });
+        window.close();
+    });
+    ```
+  </Step>
+  
+  <Step title="Select your color">
+    Move your mouse over the page. You'll see:
+    - A semi-transparent overlay with a crosshair cursor
+    - A magnifier that follows your cursor showing the current color
+    - The magnifier updates in real-time as you move
+    
+    Click anywhere to pick that color.
+  </Step>
+  
+  <Step title="View the picked color">
+    The popup will reopen automatically, displaying your picked color in the selected format (RGB, HEX, or HSL).
+  </Step>
+</Steps>
+
+<Note>
+  The color picker only works on regular web pages (http:// and https://). It cannot be used on browser internal pages like `chrome://` or `about:` pages.
+</Note>
+
+## How the picker works
+
+The color picker uses a sophisticated screenshot-based approach:
+
+1. **Screenshot capture**: When you click "Pick a Color", the extension captures the visible portion of the page using `chrome.tabs.captureVisibleTab()` (background.js:25)
+
+2. **Canvas rendering**: The screenshot is loaded into an HTML5 canvas element with device pixel ratio support for accurate color sampling (content.js:156-165)
+
+3. **Real-time preview**: As you move your mouse, the magnifier displays the color at the current position by reading pixel data from the canvas (content.js:169-187)
+
+4. **Color extraction**: When you click, the extension gets the RGB values from the canvas pixel data:
+   ```javascript
+   // From content.js:59
+   function getColorAt(clientX, clientY) {
+       const canvasX = Math.floor(clientX * devicePixelRatio);
+       const canvasY = Math.floor(clientY * devicePixelRatio);
+       const pixel = ctx.getImageData(clampedX, clampedY, 1, 1).data;
+       return `rgb(${pixel[0]}, ${pixel[1]}, ${pixel[2]})`;
+   }
+   ```
+
+## Auto-copy feature
+
+By default, picked colors are automatically copied to your clipboard. This behavior can be controlled in [Settings](/guide/settings).
+
+```javascript
+// From popup.js:349
+if (settings.autoCopy) {
+    copyTextToClipboard(colorValue.textContent);
+}
+```
+
+<Info>
+  Colors are automatically added to your palette when picked, appearing at the top of the Color Palette section.
+</Info>
+
+## Canceling the picker
+
+If you want to cancel color picking without selecting a color:
+
+- Press the **Escape** key (content.js:213-217)
+- The picker will timeout after 5 seconds of inactivity (content.js:208-210)
+
+## Supported pages
+
+<Tabs>
+  <Tab title="Supported">
+    - Regular websites (http:// and https://)
+    - Web applications
+    - Images on web pages
+    - Any visible content in the browser viewport
+  </Tab>
+  
+  <Tab title="Not supported">
+    - Browser internal pages (chrome://, about:, edge://)
+    - Extension pages
+    - PDF files in the browser viewer
+    - Browser DevTools
+  </Tab>
+</Tabs>
+
+<Tip>
+  The magnifier shows a 70x70 pixel preview that follows your cursor 15 pixels offset from the mouse position, making it easy to see the exact color you're hovering over.
+</Tip>
+
+## Color accuracy
+
+The picker accounts for:
+- **Device pixel ratio**: Ensures accurate color sampling on high-DPI displays (content.js:158)
+- **Fixed positioning**: The overlay uses fixed positioning to avoid scroll coordinate issues (content.js:8)
+- **Canvas clamping**: Coordinates are clamped to canvas bounds to prevent errors (content.js:63-64)

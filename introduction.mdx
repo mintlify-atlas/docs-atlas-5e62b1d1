@@ -1,0 +1,144 @@
+---
+title: Click-n-Color Chrome Extension
+description: A smart, stylish Chrome extension to instantly pick, save, and manage colors from any webpage
+---
+
+# Click-n-Color Chrome Extension
+
+Your daily dev utility to capture, save, manage, and export color palettes directly from any webpage with ease.
+
+<CardGroup cols={2}>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/installation"
+  >
+    Get started by installing the extension in Chrome
+  </Card>
+  <Card
+    title="Quick start"
+    icon="bolt"
+    href="/quickstart"
+  >
+    Pick your first color in seconds
+  </Card>
+  <Card
+    title="Features"
+    icon="sparkles"
+    href="#key-features"
+  >
+    Explore all the powerful features
+  </Card>
+  <Card
+    title="Export options"
+    icon="file-export"
+    href="#export-formats"
+  >
+    Export palettes in multiple formats
+  </Card>
+</CardGroup>
+
+## Key features
+
+Click-n-Color is a Chrome extension built with Manifest V3 that makes color picking effortless for designers and developers.
+
+### Color picking
+
+Pick colors from any website with a single click. The extension injects a color picker overlay that lets you hover over any pixel on the page and see the color in real-time with a magnifier preview.
+
+### Color formats
+
+Switch between three color formats instantly:
+- **RGB** - `rgb(138, 43, 226)`
+- **HEX** - `#8a2be2`
+- **HSL** - `hsl(271, 76%, 53%)`
+
+### Palette management
+
+Save up to 50 colors (customizable from 10-100) in your personal palette. Colors are automatically saved to `chrome.storage.local` and persist across browser sessions.
+
+- Click any saved color to select and copy it
+- Delete individual colors with the × button
+- Clear all colors with the "Clear All" button (requires confirmation)
+
+### Auto-copy
+
+Enable auto-copy in settings to automatically copy picked colors to your clipboard. Perfect for fast-paced design workflows.
+
+## Export formats
+
+Export your color palette in three different formats:
+
+<Tabs>
+  <Tab title="JSON">
+    Export as a JSON array for use in configuration files or design tools.
+    
+    ```json
+    [
+      "rgb(138, 43, 226)",
+      "#00bfff",
+      "hsl(0, 100%, 44%)"
+    ]
+    ```
+  </Tab>
+  <Tab title="CSS Variables">
+    Export as CSS custom properties ready to use in your stylesheets.
+    
+    ```css
+    :root {
+      --color-1: #8a2be2;
+      --color-2: #00bfff;
+      --color-3: #ff1414;
+    }
+    ```
+  </Tab>
+  <Tab title="PNG Image">
+    Export as a PNG image showing all colors in a grid layout. Perfect for sharing palettes visually.
+  </Tab>
+</Tabs>
+
+## Customization
+
+Click-n-Color offers extensive customization options:
+
+### Settings
+
+- **Default color format** - Choose RGB, HEX, or HSL as your default
+- **Maximum palette size** - Set between 10 and 100 colors
+- **Auto-copy toggle** - Enable or disable automatic clipboard copying
+
+### Themes
+
+Choose from three beautiful themes:
+
+- **Dark** (default) - Easy on the eyes with a dark purple accent
+- **Light** - Clean and bright for daylight work
+- **Blue** - Highly recommended by the creator with blue tones
+
+<Note>
+  All settings and themes are saved to Chrome storage and persist across sessions.
+</Note>
+
+## Use cases
+
+Click-n-Color is perfect for:
+
+- Designing UI components and color themes
+- Front-end development workflows
+- Color referencing for branding projects
+- Creating custom palettes for CSS frameworks
+- Extracting colors from inspiration websites
+
+## Technical details
+
+Click-n-Color is built with:
+
+- **Manifest V3** - Latest Chrome extension standard
+- **Vanilla JavaScript** - No framework dependencies
+- **Chrome Storage API** - For persistent data storage
+- **Chrome Tabs API** - For screenshot and color capture
+- **HTML5 Canvas** - For pixel-perfect color detection
+
+<Info>
+  The extension uses `chrome.tabs.captureVisibleTab` to capture screenshots and HTML5 Canvas `getImageData` to extract precise color values at the pixel level.
+</Info>
