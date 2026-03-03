@@ -1,0 +1,90 @@
+{
+  "projectType": "general",
+  "projectName": "Click-n-Color",
+  "projectDescription": "A Chrome/Edge browser extension for picking, saving, and exporting color palettes from any webpage.",
+  "theme": "almond",
+  "primaryColor": "#8a2be2",
+  "lightColor": "#00bfff",
+  "darkColor": "#1e1e1e",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/color-picking",
+              "features/palette-management",
+              "features/export-options",
+              "features/customization"
+            ]
+          },
+          {
+            "group": "User Guide",
+            "pages": [
+              "guide/picking-colors",
+              "guide/managing-palettes",
+              "guide/export-formats",
+              "guide/settings",
+              "guide/themes"
+            ]
+          },
+          {
+            "group": "Technical",
+            "pages": [
+              "technical/architecture",
+              "technical/permissions",
+              "technical/storage"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Developer",
+            "pages": [
+              "reference/manifest",
+              "reference/api",
+              "reference/changelog"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/troubleshooting",
+              "resources/faq",
+              "resources/contributing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "One-click color picking from any website",
+    "Save colors in interactive palette with RGB, HEX, and HSL formats",
+    "Export palettes as JSON, CSS Variables, or PNG images",
+    "Customizable settings (default format, max palette size, auto-copy)",
+    "Three built-in themes (Light, Dark, Blue)",
+    "Keyboard accessibility and responsive UI"
+  ],
+  "publicApiSurface": [
+    "chrome.runtime.onMessage (type: 'startColorPick')",
+    "chrome.runtime.onMessage (type: 'colorPicked')",
+    "chrome.storage.local (savedColors, settings, theme, lastPickedColor)",
+    "content.js color picker injection",
+    "background.js service worker",
+    "popup.html user interface"
+  ]
+}
